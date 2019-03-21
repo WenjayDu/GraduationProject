@@ -1,0 +1,3 @@
+[submodule "module_minc_keras"]
+	path = module_minc_keras
+	url = https://github.com/WenjayDu/minc_keras.git
