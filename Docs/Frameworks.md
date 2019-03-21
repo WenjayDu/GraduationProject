@@ -49,8 +49,8 @@ It helps inject necessary tensorflow op into the training graph so the model can
 # <span id='rⅡ'>Ⅱ. Automatic ML Frameworks</span> 
 
 In the paper[<sup>[1]</sup>](#r1), authors test 4 automatic ML frameworks -- auto-sklearn, TPOT, auto_ml and H2O, and compare their performance.
+[Here is my reading notes about this paper](https://github.com/WenjayDu/ML_Study_Notes/blob/master/2019-03/20190320-Benchmarking%20Auto%20ML%20Frameworks.md).
 
-## TO BE COMTINUE...
 
 ### References
 1. <span id='r1'>Adithya Balaji, Alexander Allen: Benchmarking Automatic Machine Learning Frameworks. In 2018.</span>
