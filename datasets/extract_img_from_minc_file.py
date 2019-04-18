@@ -1,6 +1,7 @@
 import os
-import cv2
+import numpy as np
 from module_minc_keras.utils import safe_h5py_open
+from keras.preprocessing import image
 
 SAVE_PATH = "extracted_images"
 
@@ -28,11 +29,13 @@ def extract_img(minc_file=None, save_path=None):
     if not os.path.exists(save_dir):
         os.makedirs(save_dir)
     minc_file = safe_h5py_open(minc_file, 'r')
-    total_quantity = minc_file["minc-2.0"]["image"]["0"]["image"].shape[0]
+    images = np.array(minc_file["minc-2.0"]["image"]["0"]["image"])
+    images = images.reshape(list(images.shape) + [1])
+    total_quantity = images.shape[0]
     for i in range(0, total_quantity):
-        data = minc_file["minc-2.0"]["image"]["0"]["image"][i]
-        file = save_dir + '/' + str(i) + '.png'
-        cv2.imwrite(file, data)
+        data = images[i]
+        filename = save_dir + '/' + str(i) + '.png'
+        image.save_img(filename, data)
     minc_file.close()
     print("images have been saved to ./" + save_dir)
 
@@ -56,4 +59,4 @@ def create_gif(gif_name, dir_path, duration=0.25):
     for image_name in image_list:
         frames.append(imageio.imread(image_name))
     imageio.mimsave(gif_name, frames, 'GIF', duration=duration)
-    print("generated successfully")
+    print("gif file ./" + gif_name + " generated successfully")
