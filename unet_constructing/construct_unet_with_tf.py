@@ -58,7 +58,7 @@ def read_image(file_queue):
     label = tf.decode_raw(features['label'], np.float16)
     print("label type", type(label), "label shape", label.get_shape())
     print("label reshaping")
-    label = tf.reshape(label, [FLAGS.input_shape[0], FLAGS.input_shape[1], FLAGS.input_shape[0]])
+    label = tf.reshape(label, [FLAGS.input_shape[0], FLAGS.input_shape[1], FLAGS.input_shape[2]])
     return img, label
 
 
