@@ -4,7 +4,7 @@ import tensorflow as tf
 import project_config as config
 from keras_preprocessing import image
 
-PROJECT_DIR = config.get_project_dir()
+PROJECT_DIR = config.get_project_path()
 DATASET_DIR = PROJECT_DIR + "/datasets/mri_pad_4_results/data/"
 TARGET_PATH_DIR = PROJECT_DIR + "/datasets/tfrecords/"
 
@@ -70,22 +70,26 @@ def read_from_tfrecords(srcfile):
 
 def main():
     if not os.path.exists(TARGET_PATH_DIR):
+        print("mkdir " + TARGET_PATH_DIR)
         os.makedirs(TARGET_PATH_DIR)
+    if os.path.exists(DATASET_DIR + "train_x.npy"):
+        train_data = np.load(DATASET_DIR + "train_x.npy")
+        train_label = np.load(DATASET_DIR + "train_y.npy")
+        convert_to_tfrecords(train_data, train_label, TARGET_PATH_DIR + "train.tfrecords")
+        print("converting the train dataset done!")
 
-    train_data = np.load(DATASET_DIR + "train_x.npy")
-    train_label = np.load(DATASET_DIR + "train_y.npy")
-    convert_to_tfrecords(train_data, train_label, TARGET_PATH_DIR + "train.tfrecords")
-    print("converting the train dataset done!")
+        test_data = np.load(DATASET_DIR + "test_x.npy")
+        test_label = np.load(DATASET_DIR + "test_y.npy")
+        convert_to_tfrecords(test_data, test_label, TARGET_PATH_DIR + "test.tfrecords")
+        print("converting the test dataset done!")
 
-    test_data = np.load(DATASET_DIR + "test_x.npy")
-    test_label = np.load(DATASET_DIR + "test_y.npy")
-    convert_to_tfrecords(test_data, test_label, TARGET_PATH_DIR + "test.tfrecords")
-    print("converting the test dataset done!")
-
-    validate_data = np.load(DATASET_DIR + "validate_x.npy")
-    validate_label = np.load(DATASET_DIR + "validate_y.npy")
-    convert_to_tfrecords(validate_data, validate_label, TARGET_PATH_DIR + "validate.tfrecords")
-    print("converting the validate dataset done!")
+        validate_data = np.load(DATASET_DIR + "validate_x.npy")
+        validate_label = np.load(DATASET_DIR + "validate_y.npy")
+        convert_to_tfrecords(validate_data, validate_label, TARGET_PATH_DIR + "validate.tfrecords")
+        print("converting the validate dataset done!")
+    else:
+        print("default .npy files do not exists, please run ./prepare_datasets.py to generate them")
+        return 1
 
 
 if __name__ == "__main__":

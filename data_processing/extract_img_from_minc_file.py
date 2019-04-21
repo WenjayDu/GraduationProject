@@ -2,9 +2,9 @@ import os
 import numpy as np
 from module_minc_keras.utils import safe_h5py_open
 from keras.preprocessing import image
-from .prepare_datasets import get_pardir_containing_file
+from project_config import get_pardir_containing_file
 
-SAVE_PATH = get_pardir_containing_file(__file__) + "/datasets/extracted_images"
+SAVE_PATH = get_pardir_containing_file(__file__) + "/datasets/examples/extracted_images"
 
 
 def extract_img(minc_file=None, save_path=None):

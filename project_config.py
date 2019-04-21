@@ -5,11 +5,11 @@ class GlobalVar:
     """
     all global variables are set here
     """
-    project_dir = os.path.split(os.path.realpath(__file__))[0]
+    project_path = os.path.split(os.path.realpath(__file__))[0]
 
 
-def get_project_dir():
-    return GlobalVar.project_dir
+def get_project_path():
+    return GlobalVar.project_path
 
 
 def get_dir_containing_file(file):
