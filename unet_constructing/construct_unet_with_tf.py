@@ -7,12 +7,12 @@ PROJECT_DIR = config.get_project_path()
 DATASET_DIR = PROJECT_DIR + "/datasets"
 OUTPUT_DIR = PROJECT_DIR + "/output/tf_implementation"
 
-TRAIN_SET_NAME = "tfrecords/train.tfrecords"
-VALIDATE_SET_NAME = "tfrecords/validate.tfrecords"
-TEST_SET_NAME = "tfrecords/test.tfrecords"
+TRAIN_SET_NAME = "/tfrecords/train.tfrecords"
+VALIDATE_SET_NAME = "/tfrecords/validate.tfrecords"
+TEST_SET_NAME = "/tfrecords/test.tfrecords"
 
-LOGS_DIR = os.path.join(OUTPUT_DIR + "logs")
-SAVED_MODELS = os.path.join(OUTPUT_DIR, "saved_models")
+LOGS_DIR = OUTPUT_DIR + "/logs"
+SAVED_MODELS = OUTPUT_DIR + "/saved_models"
 
 TRAIN_BATCH_SIZE = 1
 VALIDATION_BATCH_SIZE = 1
@@ -22,16 +22,16 @@ PREDICT_BATCH_SIZE = 1
 TEST_SET_SIZE = 30
 
 # the path of dir stroing imgs for predicting operation
-ORIGIN_PREDICT_DIRECTORY = DATASET_DIR + "extracted_images/sub-00031_task-01_ses-01_T1w_anat_rsl"
+ORIGIN_PREDICT_DIRECTORY = DATASET_DIR + "/examples/extracted_images/sub-00031_task-01_ses-01_T1w_anat_rsl"
 
 # the path of dir for saving imgs output from predicting operation
-PREDICT_SAVED_DIRECTORY = os.path.join(OUTPUT_DIR, "prediction_saved")
+PREDICT_SAVED_DIRECTORY = OUTPUT_DIR + "/prediction_saved"
 
-INPUT_IMG_WIDTH, INPUT_IMG_HEIGHT, INPUT_IMG_CHANNEL = 144, 112, 1
-INPUT_SHAPE = (INPUT_IMG_WIDTH, INPUT_IMG_HEIGHT, INPUT_IMG_CHANNEL)
+INPUT_IMG_HEIGHT, INPUT_IMG_WIDTH, INPUT_IMG_CHANNEL = 144, 112, 1
+INPUT_SHAPE = (INPUT_IMG_HEIGHT, INPUT_IMG_WIDTH, INPUT_IMG_CHANNEL)
 
-OUTPUT_IMG_WIDTH, OUTPUT_IMG_HEIGHT, OUTPUT_IMG_CHANNEL = 144, 112, 3
-OUTPUT_SHAPE = (OUTPUT_IMG_WIDTH, OUTPUT_IMG_HEIGHT, OUTPUT_IMG_CHANNEL)
+OUTPUT_IMG_HEIGHT, OUTPUT_IMG_WIDTH, OUTPUT_IMG_CHANNEL = 144, 112, 3
+OUTPUT_SHAPE = (OUTPUT_IMG_HEIGHT, OUTPUT_IMG_WIDTH, OUTPUT_IMG_CHANNEL)
 
 EPOCH_NUM = 3
 
@@ -161,8 +161,15 @@ class UNet:
                 dtype=tf.int32, shape=[batch_size, FLAGS.input_shape[0], FLAGS.input_shape[1]],
                 name='input_labels'
             )
-            self.keep_prob = tf.placeholder(dtype=tf.float32, name='keep_prob')  # keep_prob就是定义在dropout的时候保留多少
-            self.lamb = tf.placeholder(dtype=tf.float32, name='lambda')  # 用来控制正则项大小，较大的λ取值将较大程度的约束模型复杂度。目的是避免模型过拟合
+
+            # keep_prob is to define how many neurons to keep when dropping out
+            self.keep_prob = tf.placeholder(dtype=tf.float32, name='keep_prob')
+
+            # lamb is used to control the size of the Regularization term,
+            # and a larger value of lamb will constrain the complexity of the model to a greater extent
+            # The purpose is to avoid model overfitting
+            self.lamb = tf.placeholder(dtype=tf.float32, name='lambda')
+
             self.is_training = tf.placeholder(dtype=tf.bool, name='is_training')
             normed_batch = self.batch_norm(x=self.input_image, is_training=self.is_training, name='input')
 
@@ -495,9 +502,9 @@ class UNet:
             self.train_step = tf.train.AdamOptimizer(learning_rate=1e-4).minimize(self.loss_all)
 
     def train(self):
-        train_file_path = os.path.join(FLAGS.dataset_dir, TRAIN_SET_NAME)
+        train_file_path = FLAGS.dataset_dir + TRAIN_SET_NAME
         train_image_filename_queue = tf.train.string_input_producer(
-            string_tensor=tf.train.match_filenames_once(train_file_path), num_epochs=EPOCH_NUM, shuffle=True)
+            string_tensor=tf.train.match_filenames_once(train_file_path), num_epochs=FLAGS.epoch_num, shuffle=True)
         ckpt_path = os.path.join(FLAGS.model_dir, "model.ckpt")
         train_images, train_labels = read_image_batch(train_image_filename_queue, TRAIN_BATCH_SIZE)
         tf.summary.scalar("loss", self.loss_mean)
@@ -515,9 +522,15 @@ class UNet:
                 epoch = 1
                 while not coord.should_stop():
                     # run training
-                    example, label = sess.run([train_images, train_labels])  # 在会话中取出image和label，为numpy的数组类型
+                    example, label = sess.run([train_images, train_labels])  # get image and label，type is numpy.ndarry
+                    label = label.reshape(1, FLAGS.input_shape[0], FLAGS.input_shape[1])
 
-                    label = label.reshape(1, 144, 112)
+                    # example = example.reshape(144, 112, 1)
+                    # from keras_preprocessing import image
+                    # img = image.array_to_img(example)
+                    # print("example shape",example.shape)
+                    # img.show()
+                    # image.save_img(PROJECT_DIR + "/backup/" + str(epoch) + ".png", img)
 
                     lo, acc, summary_str = sess.run(
                         [self.loss_mean, self.accuracy, merged_summary],
@@ -526,9 +539,8 @@ class UNet:
                             self.lamb: 0.004, self.is_training: True}
                     )
                     summary_writer.add_summary(summary_str, epoch)
-                    # print('num %d, loss: %.6f and accuracy: %.6f' % (epoch, lo, acc))
                     if epoch % 10 == 0:
-                        print('num %d, loss: %.6f and accuracy: %.6f' % (epoch, lo, acc))
+                        print('num %d , loss: %.6f , accuracy: %.6f' % (epoch, lo, acc))
                     sess.run(
                         [self.train_step],
                         feed_dict={
@@ -545,7 +557,7 @@ class UNet:
         print("Done training")
 
     def validate(self):
-        validation_file_path = os.path.join(FLAGS.data_dir, VALIDATE_SET_NAME)
+        validation_file_path = FLAGS.dataset_dir + VALIDATE_SET_NAME
         validation_image_filename_queue = tf.train.string_input_producer(
             string_tensor=tf.train.match_filenames_once(validation_file_path), num_epochs=1, shuffle=True)
         ckpt_path = os.path.join(FLAGS.model_dir, "model.ckpt")
@@ -566,7 +578,7 @@ class UNet:
                 epoch = 1
                 while not coord.should_stop():
                     example, label = sess.run([validation_images, validation_labels])
-                    # print(label)
+                    label = label.reshape(1, FLAGS.input_shape[0], FLAGS.input_shape[1])
                     lo, acc = sess.run(
                         [self.loss_mean, self.accuracy],
                         feed_dict={
@@ -574,9 +586,8 @@ class UNet:
                             self.lamb: 0.004, self.is_training: False}
                     )
                     # summary_writer.add_summary(summary_str, epoch)
-                    # print('num %d, loss: %.6f and accuracy: %.6f' % (epoch, lo, acc))
                     if epoch % 1 == 0:
-                        print('num %d, loss: %.6f and accuracy: %.6f' % (epoch, lo, acc))
+                        print('num %d , loss: %.6f , accuracy: %.6f' % (epoch, lo, acc))
                     epoch += 1
             except tf.errors.OutOfRangeError:
                 print('Done validating -- epoch limit reached')
@@ -587,7 +598,7 @@ class UNet:
 
     def test(self):
         import cv2
-        test_file_path = os.path.join(FLAGS.dataset_dir, TEST_SET_NAME)
+        test_file_path = FLAGS.dataset_dir + TEST_SET_NAME
         test_image_filename_queue = tf.train.string_input_producer(
             string_tensor=tf.train.match_filenames_once(test_file_path), num_epochs=1, shuffle=True)
         ckpt_path = os.path.join(FLAGS.model_dir, "model.ckpt")
@@ -609,6 +620,7 @@ class UNet:
                 epoch = 0
                 while not coord.should_stop():
                     example, label = sess.run([test_images, test_labels])
+                    label = label.reshape(1, FLAGS.input_shape[0], FLAGS.input_shape[1])
                     img, acc = sess.run(
                         [tf.argmax(input=self.prediction, axis=3), self.accuracy],
                         feed_dict={
@@ -620,7 +632,7 @@ class UNet:
                     epoch += 1
                     cv2.imwrite(os.path.join(PREDICT_SAVED_DIRECTORY, '%d.png' % epoch), img[0] * 255)
                     if epoch % 1 == 0:
-                        print('num %d accuracy: %.6f' % (epoch, acc))
+                        print('num %d , accuracy: %.6f' % (epoch, acc))
             except tf.errors.OutOfRangeError:
                 print(
                     'Done testing -- epoch limit reached \n Average accuracy: %.2f%%' % (sum_acc / TEST_SET_SIZE * 100))
@@ -630,11 +642,11 @@ class UNet:
         print('Done testing')
 
     def predict(self):
-        import cv2
+        from keras.preprocessing import image
         import glob
         import numpy as np
         predict_file_path = glob.glob(os.path.join(ORIGIN_PREDICT_DIRECTORY, '*.png'))
-        print(len(predict_file_path))
+        print("quantity of imgs used to predict is ", len(predict_file_path))
         if not os.path.lexists(PREDICT_SAVED_DIRECTORY):
             os.mkdir(PREDICT_SAVED_DIRECTORY)
         ckpt_path = os.path.join(FLAGS.model_dir, "model.ckpt")  # CHECK_POINT_PATH
@@ -646,17 +658,24 @@ class UNet:
             # tf.summary.FileWriter(FLAGS.model_dir, sess.graph)
             all_parameters_saver.restore(sess=sess, save_path=ckpt_path)
             for index, image_path in enumerate(predict_file_path):
-                # image = cv2.imread(image_path, flags=0)
-                image = np.reshape(
-                    a=cv2.imread(image_path, flags=0),
-                    newshape=(1, FLAGS.input_shape[0], FLAGS.input_shape[1], FLAGS.input_shape[2]))
+                original_img = image.load_img(image_path,
+                                              target_size=(
+                                                  FLAGS.output_shape[0], FLAGS.output_shape[1], FLAGS.output_shape[2]),
+                                              color_mode="grayscale")
+                original_img = image.img_to_array(original_img)
+                img = np.expand_dims(original_img, axis=0)
+                print("img shape:", img.shape)
+                test = tf.argmax(input=self.prediction, axis=0)
+                print("test shape", test.shape)
+                print("test", test)
                 predict_image = sess.run(
-                    tf.argmax(input=self.prediction, axis=3),
+                    tf.argmax(input=self.prediction, axis=0),
                     feed_dict={
-                        self.input_image: image, self.keep_prob: 1.0, self.lamb: 0.004, self.is_training: False
+                        self.input_image: img, self.keep_prob: 1.0, self.lamb: 0.004, self.is_training: False
                     }
                 )
-                cv2.imwrite(os.path.join(PREDICT_SAVED_DIRECTORY, '%d.png' % index), predict_image[0])  # * 255
+                print("predict_image shape:", predict_image.shape)
+                image.save_img(os.path.join(PREDICT_SAVED_DIRECTORY, '%d.png' % index), predict_image)
         print('Done prediction')
 
 
@@ -665,12 +684,18 @@ def main():
     net.build_up_unet(TRAIN_BATCH_SIZE)
     print("❗️start training...")
     net.train()
+
+    tf.reset_default_graph()
     net.build_up_unet(VALIDATION_BATCH_SIZE)
     print("❗️start validating...")
     net.validate()
+
+    tf.reset_default_graph()
     net.build_up_unet(TEST_BATCH_SIZE)
     print("❗️start testing...")
     net.test()
+
+    tf.reset_default_graph()
     net.build_up_unet(PREDICT_BATCH_SIZE)
     print("❗️start predicting...")
     net.predict()
@@ -696,8 +721,18 @@ if __name__ == '__main__':
 
     # input image shape
     parser.add_argument(
-        '--input_shape', type=str, default=INPUT_SHAPE,
+        '--input_shape', type=tuple, default=INPUT_SHAPE,
         help='shape of the input image, channel last, a tuple like (144,112,1)')
+
+    # output image shape
+    parser.add_argument(
+        '--output_shape', type=tuple, default=OUTPUT_SHAPE,
+        help='shape of the output image, channel last, a tuple like (144,112,3)')
+
+    # epoch num
+    parser.add_argument(
+        '--epoch_num', type=int, default=EPOCH_NUM,
+        help='number of epochs')
 
     FLAGS, _ = parser.parse_known_args()
 
