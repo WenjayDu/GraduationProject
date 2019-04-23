@@ -51,20 +51,15 @@ def read_from_tfrecords(srcfile):
         try:
             data, label = sess.run(next_data)
             if i == 24:
-                data = np.array(data)
                 data = data.reshape(144, 112, 1)
-                label = np.array(label)
                 label = label.reshape(144, 112, 1)
-
-                print("datatype:", data.dtype, label.dtype)
-                print("type:", type(data), type(label))
-                print(data.shape, label.shape)
-
                 img = image.array_to_img(data)
                 lab = image.array_to_img(label)
                 img.show()
                 lab.show()
         except tf.errors.OutOfRangeError:
+            pass
+        finally:
             sess.close()
 
 

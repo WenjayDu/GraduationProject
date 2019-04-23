@@ -1,7 +1,7 @@
 import os
 import numpy as np
-from module_minc_keras.utils import safe_h5py_open
 from keras.preprocessing import image
+from module_minc_keras.utils import safe_h5py_open
 from project_config import get_pardir_containing_file
 
 SAVE_PATH = get_pardir_containing_file(__file__) + "/datasets/examples/extracted_images"
@@ -38,7 +38,7 @@ def extract_img(minc_file=None, save_path=None):
         filename = save_dir + '/' + str(i) + '.png'
         image.save_img(filename, data)
     minc_file.close()
-    print("images have been saved to ./" + save_dir)
+    print("images have been saved to " + save_dir)
 
 
 def create_gif(gif_name, dir_path, duration=0.25):

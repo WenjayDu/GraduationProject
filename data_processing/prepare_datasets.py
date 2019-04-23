@@ -10,8 +10,10 @@ def prepare_mri_dataset():
     """
     current_dir_pardir = config.get_pardir_containing_file(__file__)
     print("uncompressing the output.tar.bz2 file from minc_keras project...")
-    os.system("tar -jxvf " + current_dir_pardir + "/module_minc_keras/data/output.tar.bz2")
+    os.system("tar -jxvf " + current_dir_pardir + "/module_minc_keras/data/output.tar.bz2  &> /dev/null")
     os.system("mv ./output " + current_dir_pardir + "/datasets/mri")
+    print("uncompressing done")
+
     setup_dirs(current_dir_pardir + '/datasets/mri_pad_4_results')
     os.chdir(current_dir_pardir + "/datasets")
     [images_mri_pad_4, data_mri_pad_4] = prepare_data('mri', 'mri_pad_4_results/data', 'mri_pad_4_results/report',
