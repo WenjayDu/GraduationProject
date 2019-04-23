@@ -1,3 +1,10 @@
+import os
+import sys
+
+curPath = os.path.abspath(os.path.dirname(__file__))
+rootPath = os.path.split(curPath)[0]
+sys.path.append(rootPath)
+
 import tensorflow as tf
 import project_config as config
 from module_minc_keras.minc_keras import *
