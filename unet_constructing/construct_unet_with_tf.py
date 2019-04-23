@@ -7,9 +7,9 @@ PROJECT_DIR = config.get_project_path()
 DATASET_DIR = PROJECT_DIR + "/datasets"
 OUTPUT_DIR = PROJECT_DIR + "/output/tf_implementation"
 
-TRAIN_SET_NAME = "/tfrecords/train.tfrecords"
-VALIDATE_SET_NAME = "/tfrecords/validate.tfrecords"
-TEST_SET_NAME = "/tfrecords/test.tfrecords"
+TRAIN_SET_PATH = DATASET_DIR + "/tfrecords/train.tfrecords"
+VALIDATE_SET_PATH = DATASET_DIR + "/tfrecords/validate.tfrecords"
+TEST_SET_PATH = DATASET_DIR + "/tfrecords/test.tfrecords"
 
 LOGS_DIR = OUTPUT_DIR + "/logs"
 SAVED_MODELS = OUTPUT_DIR + "/saved_models"
@@ -19,13 +19,12 @@ VALIDATION_BATCH_SIZE = 1
 TEST_BATCH_SIZE = 1
 PREDICT_BATCH_SIZE = 1
 
-TEST_SET_SIZE = 30
-
 # the path of dir stroing imgs for predicting operation
 ORIGIN_PREDICT_DIRECTORY = DATASET_DIR + "/examples/extracted_images/sub-00031_task-01_ses-01_T1w_anat_rsl"
 
 # the path of dir for saving imgs output from predicting operation
 PREDICT_SAVED_DIRECTORY = OUTPUT_DIR + "/prediction_saved"
+TEST_SAVED_DIRECTORY = OUTPUT_DIR + "/test_saved"
 
 INPUT_IMG_HEIGHT, INPUT_IMG_WIDTH, INPUT_IMG_CHANNEL = 144, 112, 1
 INPUT_SHAPE = (INPUT_IMG_HEIGHT, INPUT_IMG_WIDTH, INPUT_IMG_CHANNEL)
@@ -33,7 +32,7 @@ INPUT_SHAPE = (INPUT_IMG_HEIGHT, INPUT_IMG_WIDTH, INPUT_IMG_CHANNEL)
 OUTPUT_IMG_HEIGHT, OUTPUT_IMG_WIDTH, OUTPUT_IMG_CHANNEL = 144, 112, 3
 OUTPUT_SHAPE = (OUTPUT_IMG_HEIGHT, OUTPUT_IMG_WIDTH, OUTPUT_IMG_CHANNEL)
 
-EPOCH_NUM = 3
+EPOCH_NUM = 1
 
 # EPS below is the value added to denominator in BN operation,
 # to prevent the 0 operation when dividing by the variance,
@@ -51,15 +50,13 @@ def read_image(file_queue):
             'label': tf.FixedLenFeature([], tf.string)
         })
 
-    img = tf.decode_raw(features['data'], np.float16)
-    print("img type", type(img), "img shape", img.get_shape())
-    print("img reshaping")
-    img = tf.reshape(img, [FLAGS.input_shape[0], FLAGS.input_shape[1], FLAGS.input_shape[2]])
+    data = tf.decode_raw(features['data'], np.float16)
+    data = tf.reshape(data, [FLAGS.input_shape[0], FLAGS.input_shape[1], FLAGS.input_shape[2]])
+
     label = tf.decode_raw(features['label'], np.float16)
-    print("label type", type(label), "label shape", label.get_shape())
-    print("label reshaping")
     label = tf.reshape(label, [FLAGS.input_shape[0], FLAGS.input_shape[1], FLAGS.input_shape[2]])
-    return img, label
+
+    return data, label
 
 
 def read_image_batch(file_queue, batch_size):
@@ -173,7 +170,7 @@ class UNet:
             self.is_training = tf.placeholder(dtype=tf.bool, name='is_training')
             normed_batch = self.batch_norm(x=self.input_image, is_training=self.is_training, name='input')
 
-            print("input layer output shape", normed_batch.shape)
+            # print("input layer output shape", normed_batch.shape)
 
         # layer 1
         with tf.name_scope('layer_1'):
@@ -202,7 +199,7 @@ class UNet:
             # dropout
             dropout_result = tf.nn.dropout(x=maxpool_result, keep_prob=self.keep_prob)
 
-            print("layer 1 output shape", dropout_result.shape)
+            # print("layer 1 output shape", dropout_result.shape)
 
         # layer 2
         with tf.name_scope('layer_2'):
@@ -230,7 +227,8 @@ class UNet:
 
             # dropout
             dropout_result = tf.nn.dropout(x=maxpool_result, keep_prob=self.keep_prob)
-            print("layer 2 output shape", dropout_result.shape)
+
+            # print("layer 2 output shape", dropout_result.shape)
 
         # layer 3
         with tf.name_scope('layer_3'):
@@ -259,7 +257,7 @@ class UNet:
             # dropout
             dropout_result = tf.nn.dropout(x=maxpool_result, keep_prob=self.keep_prob)
 
-            print("layer 3 output shape", dropout_result.shape)
+            # print("layer 3 output shape", dropout_result.shape)
 
         # layer 4
         with tf.name_scope('layer_4'):
@@ -288,7 +286,7 @@ class UNet:
             # dropout
             dropout_result = tf.nn.dropout(x=maxpool_result, keep_prob=self.keep_prob)
 
-            print("layer 4 output shape", dropout_result.shape)
+            # print("layer 4 output shape", dropout_result.shape)
 
         # the bottom
         # layer 5
@@ -322,7 +320,7 @@ class UNet:
             # dropout
             dropout_result = tf.nn.dropout(x=relu_3_result, keep_prob=self.keep_prob)
 
-            print("layer 5 output shape", dropout_result.shape)
+            # print("layer 5 output shape", dropout_result.shape)
 
         # the expanding path
         # layer 6
@@ -361,7 +359,7 @@ class UNet:
             # dropout
             dropout_result = tf.nn.dropout(x=relu_3_result, keep_prob=self.keep_prob)
 
-            print("layer 6 output shape", dropout_result.shape)
+            # print("layer 6 output shape", dropout_result.shape)
 
         # layer 7
         with tf.name_scope('layer_7'):
@@ -398,7 +396,7 @@ class UNet:
             # dropout
             dropout_result = tf.nn.dropout(x=relu_3_result, keep_prob=self.keep_prob)
 
-            print("layer 7 output shape", dropout_result.shape)
+            # print("layer 7 output shape", dropout_result.shape)
 
         # layer 8
         with tf.name_scope('layer_8'):
@@ -435,7 +433,7 @@ class UNet:
             # dropout
             dropout_result = tf.nn.dropout(x=relu_3_result, keep_prob=self.keep_prob)
 
-            print("layer 8 output shape", dropout_result.shape)
+            # print("layer 8 output shape", dropout_result.shape)
 
         # layer 9
         with tf.name_scope('layer_9'):
@@ -470,7 +468,7 @@ class UNet:
             # self.prediction = tf.nn.sigmoid(x=tf.nn.bias_add(result_conv_3, self.b[23], name='add_bias'), name='sigmoid_1')
             self.prediction = normed_batch
 
-            print("layer 9 output shape", self.prediction.shape)
+            # print("layer 9 output shape", self.prediction.shape)
 
         # softmax loss
         with tf.name_scope('softmax_loss'):
@@ -502,9 +500,8 @@ class UNet:
             self.train_step = tf.train.AdamOptimizer(learning_rate=1e-4).minimize(self.loss_all)
 
     def train(self):
-        train_file_path = FLAGS.dataset_dir + TRAIN_SET_NAME
         train_image_filename_queue = tf.train.string_input_producer(
-            string_tensor=tf.train.match_filenames_once(train_file_path), num_epochs=FLAGS.epoch_num, shuffle=True)
+            string_tensor=tf.train.match_filenames_once(TRAIN_SET_PATH), num_epochs=FLAGS.epoch_num, shuffle=True)
         ckpt_path = os.path.join(FLAGS.model_dir, "model.ckpt")
         train_images, train_labels = read_image_batch(train_image_filename_queue, TRAIN_BATCH_SIZE)
         tf.summary.scalar("loss", self.loss_mean)
@@ -539,7 +536,7 @@ class UNet:
                             self.lamb: 0.004, self.is_training: True}
                     )
                     summary_writer.add_summary(summary_str, epoch)
-                    if epoch % 10 == 0:
+                    if epoch % 1000 == 0:
                         print('num %d , loss: %.6f , accuracy: %.6f' % (epoch, lo, acc))
                     sess.run(
                         [self.train_step],
@@ -557,9 +554,8 @@ class UNet:
         print("Done training")
 
     def validate(self):
-        validation_file_path = FLAGS.dataset_dir + VALIDATE_SET_NAME
         validation_image_filename_queue = tf.train.string_input_producer(
-            string_tensor=tf.train.match_filenames_once(validation_file_path), num_epochs=1, shuffle=True)
+            string_tensor=tf.train.match_filenames_once(VALIDATE_SET_PATH), num_epochs=1, shuffle=True)
         ckpt_path = os.path.join(FLAGS.model_dir, "model.ckpt")
         validation_images, validation_labels = read_image_batch(validation_image_filename_queue, VALIDATION_BATCH_SIZE)
         # tf.summary.scalar("loss", self.loss_mean)
@@ -586,7 +582,7 @@ class UNet:
                             self.lamb: 0.004, self.is_training: False}
                     )
                     # summary_writer.add_summary(summary_str, epoch)
-                    if epoch % 1 == 0:
+                    if epoch % 100 == 0:
                         print('num %d , loss: %.6f , accuracy: %.6f' % (epoch, lo, acc))
                     epoch += 1
             except tf.errors.OutOfRangeError:
@@ -598,9 +594,8 @@ class UNet:
 
     def test(self):
         import cv2
-        test_file_path = FLAGS.dataset_dir + TEST_SET_NAME
         test_image_filename_queue = tf.train.string_input_producer(
-            string_tensor=tf.train.match_filenames_once(test_file_path), num_epochs=1, shuffle=True)
+            string_tensor=tf.train.match_filenames_once(TEST_SET_PATH), num_epochs=1, shuffle=True)
         ckpt_path = os.path.join(FLAGS.model_dir, "model.ckpt")
         test_images, test_labels = read_image_batch(test_image_filename_queue, TEST_BATCH_SIZE)
         # tf.summary.scalar("loss", self.loss_mean)
@@ -630,12 +625,12 @@ class UNet:
                     )
                     sum_acc += acc
                     epoch += 1
-                    cv2.imwrite(os.path.join(PREDICT_SAVED_DIRECTORY, '%d.png' % epoch), img[0] * 255)
-                    if epoch % 1 == 0:
+                    cv2.imwrite(os.path.join(TEST_SAVED_DIRECTORY, '%d.png' % epoch), img[0] * 255)
+                    if epoch % 100 == 0:
                         print('num %d , accuracy: %.6f' % (epoch, acc))
             except tf.errors.OutOfRangeError:
                 print(
-                    'Done testing -- epoch limit reached \n Average accuracy: %.2f%%' % (sum_acc / TEST_SET_SIZE * 100))
+                    'Done testing -- epoch limit reached \n Average accuracy: %.2f%%' % (sum_acc / epoch * 100))
             finally:
                 coord.request_stop()
             coord.join(threads)
@@ -668,14 +663,16 @@ class UNet:
                 test = tf.argmax(input=self.prediction, axis=0)
                 print("test shape", test.shape)
                 print("test", test)
-                predict_image = sess.run(
-                    tf.argmax(input=self.prediction, axis=0),
-                    feed_dict={
-                        self.input_image: img, self.keep_prob: 1.0, self.lamb: 0.004, self.is_training: False
-                    }
-                )
+                predict_image = sess.run(self.prediction,
+                                         feed_dict={
+                                             self.input_image: img, self.keep_prob: 1.0, self.lamb: 0.004,
+                                             self.is_training: False
+                                         }
+                                         )
                 print("predict_image shape:", predict_image.shape)
-                image.save_img(os.path.join(PREDICT_SAVED_DIRECTORY, '%d.png' % index), predict_image)
+                predict_image = predict_image.reshape(FLAGS.output_shape[0], FLAGS.output_shape[1],
+                                                      FLAGS.output_shape[2])
+                image.save_img(os.path.join(PREDICT_SAVED_DIRECTORY, '%d.png' % index), predict_image * 255)
         print('Done prediction')
 
 
@@ -736,7 +733,11 @@ if __name__ == '__main__':
 
     FLAGS, _ = parser.parse_known_args()
 
-    if not os.path.exists(DATASET_DIR + TRAIN_SET_NAME):
+    if not os.path.exists(TEST_SAVED_DIRECTORY):
+        os.system("mkdir " + TEST_SAVED_DIRECTORY)
+
+    if not os.path.exists(TRAIN_SET_PATH):
+        print(".tfrecords files used to train do not exist, generating now...")
         convert_npy_to_tfrecords.main()
 
     main()
