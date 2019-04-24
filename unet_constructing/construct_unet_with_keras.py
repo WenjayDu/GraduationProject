@@ -1,4 +1,12 @@
+import os
+import sys
+
+curPath = os.path.abspath(os.path.dirname(__file__))
+rootPath = os.path.split(curPath)[0]
+sys.path.append(rootPath)
+
 import project_config as config
+from data_processing.prepare_datasets import prepare_mri_dataset
 from module_minc_keras.minc_keras import *
 
 PROJECT_DIR = config.get_project_path()
@@ -7,12 +15,7 @@ OUTPUT_DIR = PROJECT_DIR + "/output/keras_implementation"
 
 
 def main():
-    os.chdir(DATASET_DIR)
-    setup_dirs('mri_pad_4_results')
-    [images_mri_pad_4, data_mri_pad_4] = prepare_data('mri', 'mri_pad_4_results/data', 'mri_pad_4_results/report',
-                                                      input_str='_T1w_anat_rsl.mnc', label_str='variant-seg',
-                                                      images_fn='mri_pad_4_results/report/mri_unet.csv', pad_base=4,
-                                                      clobber=True)
+    [images_mri_pad_4, data_mri_pad_4] = prepare_mri_dataset()
 
     # Load data
     Y_validate_mri_pad_4 = np.load(data_mri_pad_4["validate_y_fn"] + '.npy')
@@ -31,7 +34,7 @@ def main():
 
     # if you change the number of times you downsample with max_pool,
     # then you need to rerun prepare_data() with pad_base=<number of downsample nodes>
-    model_name = "model_of_unet_at_mri.hdf5"
+    model_name = OUTPUT_DIR + "model_of_unet_at_mri.hdf5"
 
     # Define the architecture of neural network
     IN = Input(shape=(data_mri_pad_4['image_dim'][1], data_mri_pad_4['image_dim'][2], 1))
