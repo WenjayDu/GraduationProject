@@ -41,7 +41,7 @@ def main():
 
     # if you change the number of times you downsample with max_pool,
     # then you need to rerun prepare_data() with pad_base=<number of downsample nodes>
-    model_name = OUTPUT_DIR + "model_of_unet_at_mri.hdf5"
+    model_saving_path = OUTPUT_DIR + "/model_of_unet_at_mri.hdf5"
 
     # Define the architecture of neural network
     IN = Input(shape=(data_mri_pad_4['image_dim'][1], data_mri_pad_4['image_dim'][2], 1))
@@ -107,7 +107,7 @@ def main():
                         validation_data=([X_validate_mri_pad_4], Y_validate_mri_pad_4),
                         epochs=3)
     # save model
-    model.save(model_name)
+    model.save(model_saving_path)
     # test model
     test_score = model.evaluate(X_test_mri_pad_4, Y_test_mri_pad_4)
     print("Test :", test_score)
