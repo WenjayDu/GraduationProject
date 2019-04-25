@@ -5,17 +5,24 @@ curPath = os.path.abspath(os.path.dirname(__file__))
 rootPath = os.path.split(curPath)[0]
 sys.path.append(rootPath)
 
-import project_config as config
+import pickle
+from project_config import GlobalVar
 from data_processing.prepare_datasets import prepare_mri_dataset
 from module_minc_keras.minc_keras import *
 
-PROJECT_DIR = config.get_project_path()
-DATASET_DIR = PROJECT_DIR + "/datasets"
-OUTPUT_DIR = PROJECT_DIR + "/output/keras_implementation"
+PROJECT_DIR = GlobalVar.PROJECT_PATH
+DATASET_DIR = GlobalVar.DATASET_PATH
+OUTPUT_DIR = GlobalVar.OUTPUT_PATH + "/keras_implementation"
+SERIALIZE_FILE = GlobalVar.DATASET_PATH + "/mri_pad_4_results/prepare_mri_dataset_return"
 
 
 def main():
-    [images_mri_pad_4, data_mri_pad_4] = prepare_mri_dataset()
+    if os.path.exists(SERIALIZE_FILE):
+        with open(SERIALIZE_FILE, "rb") as f:
+            print("Deserialized file:", SERIALIZE_FILE, "done")
+            [images_mri_pad_4, data_mri_pad_4] = pickle.load(f)
+    else:
+        [images_mri_pad_4, data_mri_pad_4] = prepare_mri_dataset()
 
     # Load data
     Y_validate_mri_pad_4 = np.load(data_mri_pad_4["validate_y_fn"] + '.npy')

@@ -6,13 +6,13 @@ rootPath = os.path.split(curPath)[0]
 sys.path.append(rootPath)
 
 import tensorflow as tf
-import project_config as config
+from project_config import GlobalVar
 from module_minc_keras.minc_keras import *
 from data_processing import convert_npy_to_tfrecords
 
-PROJECT_DIR = config.get_project_path()
-DATASET_DIR = PROJECT_DIR + "/datasets"
-OUTPUT_DIR = PROJECT_DIR + "/output/tf_implementation"
+PROJECT_DIR = GlobalVar.PROJECT_PATH
+DATASET_DIR = GlobalVar.DATASET_PATH
+OUTPUT_DIR = GlobalVar.OUTPUT_PATH + "/tf_implementation"
 
 TRAIN_SET_PATH = DATASET_DIR + "/tfrecords/train.tfrecords"
 VALIDATE_SET_PATH = DATASET_DIR + "/tfrecords/validate.tfrecords"

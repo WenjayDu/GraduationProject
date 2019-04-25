@@ -1,12 +1,12 @@
 import os
 import numpy as np
 import tensorflow as tf
-import project_config as config
+from project_config import GlobalVar
 from keras_preprocessing import image
 
-PROJECT_DIR = config.get_project_path()
-DATASET_DIR = PROJECT_DIR + "/datasets/mri_pad_4_results/data/"
-TARGET_PATH_DIR = PROJECT_DIR + "/datasets/tfrecords/"
+PROJECT_DIR = GlobalVar.PROJECT_PATH
+DATASET_DIR = GlobalVar.DATASET_PATH
+TARGET_PATH_DIR = DATASET_DIR + "/tfrecords/"
 
 
 def convert_to_tfrecords(data_npy, label_npy, target_path):
