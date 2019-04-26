@@ -3,4 +3,4 @@
 	url = https://github.com/WenjayDu/minc_keras.git
 [submodule "module_pocketflow"]
 	path = module_pocketflow
-	url = https://github.com/Tencent/PocketFlow.git
+	url = https://github.com/WenjayDu/PocketFlow.git
