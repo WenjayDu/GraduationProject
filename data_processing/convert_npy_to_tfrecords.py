@@ -6,6 +6,7 @@ from keras_preprocessing import image
 
 PROJECT_DIR = GlobalVar.PROJECT_PATH
 DATASET_DIR = GlobalVar.DATASET_PATH
+DATA_DIR = DATASET_DIR + "/mri_pad_4_results/data"
 TARGET_PATH_DIR = DATASET_DIR + "/tfrecords/"
 
 
@@ -67,24 +68,25 @@ def main():
     if not os.path.exists(TARGET_PATH_DIR):
         print("mkdir " + TARGET_PATH_DIR)
         os.makedirs(TARGET_PATH_DIR)
-    if os.path.exists(DATASET_DIR + "/train_x.npy"):
-        train_data = np.load(DATASET_DIR + "/train_x.npy")
-        train_label = np.load(DATASET_DIR + "/train_y.npy")
+
+    if os.path.exists(DATA_DIR + "/train_x.npy"):
+        train_data = np.load(DATA_DIR + "/train_x.npy")
+        train_label = np.load(DATA_DIR + "/train_y.npy")
         convert_to_tfrecords(train_data, train_label, TARGET_PATH_DIR + "/train.tfrecords")
         print("converting the train dataset done!")
 
-        test_data = np.load(DATASET_DIR + "/test_x.npy")
-        test_label = np.load(DATASET_DIR + "/test_y.npy")
+        test_data = np.load(DATA_DIR + "/test_x.npy")
+        test_label = np.load(DATA_DIR + "/test_y.npy")
         convert_to_tfrecords(test_data, test_label, TARGET_PATH_DIR + "/test.tfrecords")
         print("converting the test dataset done!")
 
-        validate_data = np.load(DATASET_DIR + "/validate_x.npy")
-        validate_label = np.load(DATASET_DIR + "/validate_y.npy")
+        validate_data = np.load(DATA_DIR + "/validate_x.npy")
+        validate_label = np.load(DATA_DIR + "/validate_y.npy")
         convert_to_tfrecords(validate_data, validate_label, TARGET_PATH_DIR + "/validate.tfrecords")
         print("converting the validate dataset done!")
     else:
         print(
-            "default .npy files do not exists in " + DATASET_DIR + ", please run ./prepare_datasets.py to generate them")
+            "default .npy files do not exists in " + DATA_DIR + ", please run ./prepare_datasets.py to generate them")
         return 1
 
 
