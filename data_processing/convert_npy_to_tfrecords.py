@@ -67,23 +67,24 @@ def main():
     if not os.path.exists(TARGET_PATH_DIR):
         print("mkdir " + TARGET_PATH_DIR)
         os.makedirs(TARGET_PATH_DIR)
-    if os.path.exists(DATASET_DIR + "train_x.npy"):
-        train_data = np.load(DATASET_DIR + "train_x.npy")
-        train_label = np.load(DATASET_DIR + "train_y.npy")
-        convert_to_tfrecords(train_data, train_label, TARGET_PATH_DIR + "train.tfrecords")
+    if os.path.exists(DATASET_DIR + "/train_x.npy"):
+        train_data = np.load(DATASET_DIR + "/train_x.npy")
+        train_label = np.load(DATASET_DIR + "/train_y.npy")
+        convert_to_tfrecords(train_data, train_label, TARGET_PATH_DIR + "/train.tfrecords")
         print("converting the train dataset done!")
 
-        test_data = np.load(DATASET_DIR + "test_x.npy")
-        test_label = np.load(DATASET_DIR + "test_y.npy")
-        convert_to_tfrecords(test_data, test_label, TARGET_PATH_DIR + "test.tfrecords")
+        test_data = np.load(DATASET_DIR + "/test_x.npy")
+        test_label = np.load(DATASET_DIR + "/test_y.npy")
+        convert_to_tfrecords(test_data, test_label, TARGET_PATH_DIR + "/test.tfrecords")
         print("converting the test dataset done!")
 
-        validate_data = np.load(DATASET_DIR + "validate_x.npy")
-        validate_label = np.load(DATASET_DIR + "validate_y.npy")
-        convert_to_tfrecords(validate_data, validate_label, TARGET_PATH_DIR + "validate.tfrecords")
+        validate_data = np.load(DATASET_DIR + "/validate_x.npy")
+        validate_label = np.load(DATASET_DIR + "/validate_y.npy")
+        convert_to_tfrecords(validate_data, validate_label, TARGET_PATH_DIR + "/validate.tfrecords")
         print("converting the validate dataset done!")
     else:
-        print("default .npy files do not exists, please run ./prepare_datasets.py to generate them")
+        print(
+            "default .npy files do not exists in " + DATASET_DIR + ", please run ./prepare_datasets.py to generate them")
         return 1
 
 
