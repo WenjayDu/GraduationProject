@@ -6,7 +6,7 @@ rootPath = os.path.split(curPath)[0]
 sys.path.append(rootPath)
 
 import tensorflow as tf
-from project_config import GlobalVar
+from config import GlobalVar
 from module_minc_keras.minc_keras import *
 from data_processing import convert_npy_to_tfrecords
 
@@ -19,7 +19,7 @@ VALIDATE_SET_PATH = DATASET_DIR + "/tfrecords/validate.tfrecords"
 TEST_SET_PATH = DATASET_DIR + "/tfrecords/test.tfrecords"
 
 LOGS_DIR = OUTPUT_DIR + "/logs"
-SAVED_MODELS = OUTPUT_DIR + "/saved_models"
+SAVED_MODELS_DIR = OUTPUT_DIR + "/saved_models"
 
 TRAIN_BATCH_SIZE = 1
 VALIDATION_BATCH_SIZE = 1
@@ -186,16 +186,16 @@ class UNet:
             # self.b[1] = self.init_b(shape=[64], name='b_1')
             conv_1_result = tf.nn.conv2d(
                 input=normed_batch, filter=self.w[1], strides=[1, 1, 1, 1], padding='SAME', name='conv_1')
-            normed_batch = self.batch_norm(x=conv_1_result, is_training=self.is_training, name='layer_1_conv_1')
-            relu_1_result = tf.nn.relu(normed_batch, name='relu_1')
+            # normed_batch = self.batch_norm(x=conv_1_result, is_training=self.is_training, name='layer_1_conv_1')
+            relu_1_result = tf.nn.relu(conv_1_result, name='relu_1')
 
             # conv_2
             self.w[2] = self.init_w(shape=[3, 3, 64, 64], name='w_2')
             # self.b[2] = self.init_b(shape=[64], name='b_2')
             conv_2_result = tf.nn.conv2d(
                 input=relu_1_result, filter=self.w[2], strides=[1, 1, 1, 1], padding='SAME', name='conv_2')
-            normed_batch = self.batch_norm(x=conv_2_result, is_training=self.is_training, name='layer_1_conv_2')
-            relu_2_result = tf.nn.relu(features=normed_batch, name='relu_2')
+            # normed_batch = self.batch_norm(x=conv_2_result, is_training=self.is_training, name='layer_1_conv_2')
+            relu_2_result = tf.nn.relu(features=conv_2_result, name='relu_2')
             self.result_from_contracting[1] = relu_2_result  # saved for up sampling below
 
             # maxpool
@@ -204,7 +204,7 @@ class UNet:
                 strides=[1, 2, 2, 1], padding='VALID', name='maxpool')
 
             # dropout
-            dropout_result = tf.nn.dropout(x=maxpool_result, keep_prob=self.keep_prob)
+            # dropout_result = tf.nn.dropout(x=maxpool_result, keep_prob=self.keep_prob)
 
             # print("layer 1 output shape", dropout_result.shape)
 
@@ -214,17 +214,17 @@ class UNet:
             self.w[3] = self.init_w(shape=[3, 3, 64, 128], name='w_3')
             # self.b[3] = self.init_b(shape=[128], name='b_3')
             conv_1_result = tf.nn.conv2d(
-                input=dropout_result, filter=self.w[3], strides=[1, 1, 1, 1], padding='SAME', name='conv_1')
-            normed_batch = self.batch_norm(x=conv_1_result, is_training=self.is_training, name='layer_2_conv_1')
-            relu_1_result = tf.nn.relu(features=normed_batch, name='relu_1')
+                input=maxpool_result, filter=self.w[3], strides=[1, 1, 1, 1], padding='SAME', name='conv_1')
+            # normed_batch = self.batch_norm(x=conv_1_result, is_training=self.is_training, name='layer_2_conv_1')
+            relu_1_result = tf.nn.relu(features=conv_1_result, name='relu_1')
 
             # conv_2
             self.w[4] = self.init_w(shape=[3, 3, 128, 128], name='w_4')
             # self.b[4] = self.init_b(shape=[128], name='b_4')
             conv_2_result = tf.nn.conv2d(
                 input=relu_1_result, filter=self.w[4], strides=[1, 1, 1, 1], padding='SAME', name='conv_2')
-            normed_batch = self.batch_norm(x=conv_2_result, is_training=self.is_training, name='layer_2_conv_2')
-            relu_2_result = tf.nn.relu(features=normed_batch, name='relu_2')
+            # normed_batch = self.batch_norm(x=conv_2_result, is_training=self.is_training, name='layer_2_conv_2')
+            relu_2_result = tf.nn.relu(features=conv_2_result, name='relu_2')
             self.result_from_contracting[2] = relu_2_result  # saved for up sampling below
 
             # maxpooling
@@ -233,7 +233,7 @@ class UNet:
                 strides=[1, 2, 2, 1], padding='VALID', name='maxpool')
 
             # dropout
-            dropout_result = tf.nn.dropout(x=maxpool_result, keep_prob=self.keep_prob)
+            # dropout_result = tf.nn.dropout(x=maxpool_result, keep_prob=self.keep_prob)
 
             # print("layer 2 output shape", dropout_result.shape)
 
@@ -243,17 +243,17 @@ class UNet:
             self.w[5] = self.init_w(shape=[3, 3, 128, 256], name='w_5')
             # self.b[5] = self.init_b(shape=[256], name='b_5')
             conv_1_result = tf.nn.conv2d(
-                input=dropout_result, filter=self.w[5], strides=[1, 1, 1, 1], padding='SAME', name='conv_1')
-            normed_batch = self.batch_norm(x=conv_1_result, is_training=self.is_training, name='layer_3_conv_1')
-            relu_1_result = tf.nn.relu(features=normed_batch, name='relu_1')
+                input=maxpool_result, filter=self.w[5], strides=[1, 1, 1, 1], padding='SAME', name='conv_1')
+            # normed_batch = self.batch_norm(x=conv_1_result, is_training=self.is_training, name='layer_3_conv_1')
+            relu_1_result = tf.nn.relu(features=conv_1_result, name='relu_1')
 
             # conv_2
             self.w[6] = self.init_w(shape=[3, 3, 256, 256], name='w_6')
             # self.b[6] = self.init_b(shape=[256], name='b_6')
             conv_2_result = tf.nn.conv2d(
                 input=relu_1_result, filter=self.w[6], strides=[1, 1, 1, 1], padding='SAME', name='conv_2')
-            normed_batch = self.batch_norm(x=conv_2_result, is_training=self.is_training, name='layer_3_conv_2')
-            relu_2_result = tf.nn.relu(features=normed_batch, name='relu_2')
+            # normed_batch = self.batch_norm(x=conv_2_result, is_training=self.is_training, name='layer_3_conv_2')
+            relu_2_result = tf.nn.relu(features=conv_2_result, name='relu_2')
             self.result_from_contracting[3] = relu_2_result  # saved for up sampling below
 
             # maxpool
@@ -262,7 +262,7 @@ class UNet:
                 strides=[1, 2, 2, 1], padding='VALID', name='maxpool')
 
             # dropout
-            dropout_result = tf.nn.dropout(x=maxpool_result, keep_prob=self.keep_prob)
+            # dropout_result = tf.nn.dropout(x=maxpool_result, keep_prob=self.keep_prob)
 
             # print("layer 3 output shape", dropout_result.shape)
 
@@ -272,17 +272,17 @@ class UNet:
             self.w[7] = self.init_w(shape=[3, 3, 256, 512], name='w_7')
             # self.b[7] = self.init_b(shape=[512], name='b_7')
             conv_1_result = tf.nn.conv2d(
-                input=dropout_result, filter=self.w[7], strides=[1, 1, 1, 1], padding='SAME', name='conv_1')
-            normed_batch = self.batch_norm(x=conv_1_result, is_training=self.is_training, name='layer_4_conv_1')
-            relu_1_result = tf.nn.relu(features=normed_batch, name='relu_1')
+                input=maxpool_result, filter=self.w[7], strides=[1, 1, 1, 1], padding='SAME', name='conv_1')
+            # normed_batch = self.batch_norm(x=conv_1_result, is_training=self.is_training, name='layer_4_conv_1')
+            relu_1_result = tf.nn.relu(features=conv_1_result, name='relu_1')
 
             # conv_2
             self.w[8] = self.init_w(shape=[3, 3, 512, 512], name='w_8')
             # self.b[8] = self.init_b(shape=[512], name='b_8')
             conv_2_result = tf.nn.conv2d(
                 input=relu_1_result, filter=self.w[8], strides=[1, 1, 1, 1], padding='SAME', name='conv_2')
-            normed_batch = self.batch_norm(x=conv_2_result, is_training=self.is_training, name='layer_4_conv_2')
-            relu_2_result = tf.nn.relu(features=normed_batch, name='relu_2')
+            # normed_batch = self.batch_norm(x=conv_2_result, is_training=self.is_training, name='layer_4_conv_2')
+            relu_2_result = tf.nn.relu(features=conv_2_result, name='relu_2')
             self.result_from_contracting[4] = relu_2_result  # saved for up sampling below
 
             # maxpool
@@ -291,7 +291,7 @@ class UNet:
                 strides=[1, 2, 2, 1], padding='VALID', name='maxpool')
 
             # dropout
-            dropout_result = tf.nn.dropout(x=maxpool_result, keep_prob=self.keep_prob)
+            # dropout_result = tf.nn.dropout(x=maxpool_result, keep_prob=self.keep_prob)
 
             # print("layer 4 output shape", dropout_result.shape)
 
@@ -302,17 +302,17 @@ class UNet:
             self.w[9] = self.init_w(shape=[3, 3, 512, 1024], name='w_9')
             # self.b[9] = self.init_b(shape=[1024], name='b_9')
             conv_1_result = tf.nn.conv2d(
-                input=dropout_result, filter=self.w[9], strides=[1, 1, 1, 1], padding='SAME', name='conv_1')
-            normed_batch = self.batch_norm(x=conv_1_result, is_training=self.is_training, name='layer_5_conv_1')
-            relu_1_result = tf.nn.relu(features=normed_batch, name='relu_1')
+                input=maxpool_result, filter=self.w[9], strides=[1, 1, 1, 1], padding='SAME', name='conv_1')
+            # normed_batch = self.batch_norm(x=conv_1_result, is_training=self.is_training, name='layer_5_conv_1')
+            relu_1_result = tf.nn.relu(features=conv_1_result, name='relu_1')
 
             # conv_2
             self.w[10] = self.init_w(shape=[3, 3, 1024, 1024], name='w_10')
             # self.b[10] = self.init_b(shape=[1024], name='b_10')
             conv_2_result = tf.nn.conv2d(
                 input=relu_1_result, filter=self.w[10], strides=[1, 1, 1, 1], padding='SAME', name='conv_2')
-            normed_batch = self.batch_norm(x=conv_2_result, is_training=self.is_training, name='layer_5_conv_2')
-            relu_2_result = tf.nn.relu(features=normed_batch, name='relu_2')
+            # normed_batch = self.batch_norm(x=conv_2_result, is_training=self.is_training, name='layer_5_conv_2')
+            relu_2_result = tf.nn.relu(features=conv_2_result, name='relu_2')
 
             # up_sampling
             self.w[11] = self.init_w(shape=[2, 2, 512, 1024], name='w_11')
@@ -321,11 +321,11 @@ class UNet:
                 value=relu_2_result, filter=self.w[11],
                 output_shape=[batch_size, int(relu_2_result.shape[1]) * 2, int(relu_2_result.shape[2]) * 2, 512],
                 strides=[1, 2, 2, 1], padding='VALID', name='Up_Sampling')
-            normed_batch = self.batch_norm(x=result_up, is_training=self.is_training, name='layer_5_conv_up')
-            relu_3_result = tf.nn.relu(features=normed_batch, name='relu_3')
+            # normed_batch = self.batch_norm(x=result_up, is_training=self.is_training, name='layer_5_conv_up')
+            relu_3_result = tf.nn.relu(features=result_up, name='relu_3')
 
             # dropout
-            dropout_result = tf.nn.dropout(x=relu_3_result, keep_prob=self.keep_prob)
+            # dropout_result = tf.nn.dropout(x=relu_3_result, keep_prob=self.keep_prob)
 
             # print("layer 5 output shape", dropout_result.shape)
 
@@ -334,23 +334,23 @@ class UNet:
         with tf.name_scope('layer_6'):
             # copy, crop and merge
             result_merge = self.merge_results_from_contracting_and_upsampling(
-                result_from_contracting=self.result_from_contracting[4], result_from_upsampling=dropout_result)
+                result_from_contracting=self.result_from_contracting[4], result_from_upsampling=relu_3_result)
 
             # conv_1
             self.w[12] = self.init_w(shape=[3, 3, 1024, 512], name='w_12')
             # self.b[12] = self.init_b(shape=[512], name='b_12')
             conv_1_result = tf.nn.conv2d(
                 input=result_merge, filter=self.w[12], strides=[1, 1, 1, 1], padding='SAME', name='conv_1')
-            normed_batch = self.batch_norm(x=conv_1_result, is_training=self.is_training, name='layer_6_conv_1')
-            relu_1_result = tf.nn.relu(features=normed_batch, name='relu_1')
+            # normed_batch = self.batch_norm(x=conv_1_result, is_training=self.is_training, name='layer_6_conv_1')
+            relu_1_result = tf.nn.relu(features=conv_1_result, name='relu_1')
 
             # conv_2
             self.w[13] = self.init_w(shape=[3, 3, 512, 512], name='w_10')
             # self.b[13] = self.init_b(shape=[512], name='b_10')
             conv_2_result = tf.nn.conv2d(
                 input=relu_1_result, filter=self.w[13], strides=[1, 1, 1, 1], padding='SAME', name='conv_2')
-            normed_batch = self.batch_norm(x=conv_2_result, is_training=self.is_training, name='layer_6_conv_2')
-            relu_2_result = tf.nn.relu(features=normed_batch, name='relu_2')
+            # normed_batch = self.batch_norm(x=conv_2_result, is_training=self.is_training, name='layer_6_conv_2')
+            relu_2_result = tf.nn.relu(features=conv_2_result, name='relu_2')
             # print(result_relu_2.shape[1])
 
             # up_sampling
@@ -360,11 +360,11 @@ class UNet:
                 value=relu_2_result, filter=self.w[14],
                 output_shape=[batch_size, int(relu_2_result.shape[1]) * 2, int(relu_2_result.shape[2]) * 2, 256],
                 strides=[1, 2, 2, 1], padding='VALID', name='Up_Sampling')
-            normed_batch = self.batch_norm(x=result_up, is_training=self.is_training, name='layer_6_conv_up')
-            relu_3_result = tf.nn.relu(features=normed_batch, name='relu_3')
+            # normed_batch = self.batch_norm(x=result_up, is_training=self.is_training, name='layer_6_conv_up')
+            relu_3_result = tf.nn.relu(features=result_up, name='relu_3')
 
             # dropout
-            dropout_result = tf.nn.dropout(x=relu_3_result, keep_prob=self.keep_prob)
+            # dropout_result = tf.nn.dropout(x=relu_3_result, keep_prob=self.keep_prob)
 
             # print("layer 6 output shape", dropout_result.shape)
 
@@ -379,16 +379,16 @@ class UNet:
             # self.b[15] = self.init_b(shape=[256], name='b_12')
             conv_1_result = tf.nn.conv2d(
                 input=result_merge, filter=self.w[15], strides=[1, 1, 1, 1], padding='SAME', name='conv_1')
-            normed_batch = self.batch_norm(x=conv_1_result, is_training=self.is_training, name='layer_7_conv_1')
-            relu_1_result = tf.nn.relu(features=normed_batch, name='relu_1')
+            # normed_batch = self.batch_norm(x=conv_1_result, is_training=self.is_training, name='layer_7_conv_1')
+            relu_1_result = tf.nn.relu(features=conv_1_result, name='relu_1')
 
             # conv_2
             self.w[16] = self.init_w(shape=[3, 3, 256, 256], name='w_10')
             # self.b[16] = self.init_b(shape=[256], name='b_10')
             conv_2_result = tf.nn.conv2d(
                 input=relu_1_result, filter=self.w[16], strides=[1, 1, 1, 1], padding='SAME', name='conv_2')
-            normed_batch = self.batch_norm(x=conv_2_result, is_training=self.is_training, name='layer_7_conv_2')
-            relu_2_result = tf.nn.relu(features=normed_batch, name='relu_2')
+            # normed_batch = self.batch_norm(x=conv_2_result, is_training=self.is_training, name='layer_7_conv_2')
+            relu_2_result = tf.nn.relu(features=conv_2_result, name='relu_2')
 
             # up_sampling
             self.w[17] = self.init_w(shape=[2, 2, 128, 256], name='w_11')
@@ -397,11 +397,11 @@ class UNet:
                 value=relu_2_result, filter=self.w[17],
                 output_shape=[batch_size, int(relu_2_result.shape[1]) * 2, int(relu_2_result.shape[2]) * 2, 128],
                 strides=[1, 2, 2, 1], padding='VALID', name='Up_Sampling')
-            normed_batch = self.batch_norm(x=result_up, is_training=self.is_training, name='layer_7_up')
-            relu_3_result = tf.nn.relu(features=normed_batch, name='relu_3')
+            # normed_batch = self.batch_norm(x=result_up, is_training=self.is_training, name='layer_7_up')
+            relu_3_result = tf.nn.relu(features=result_up, name='relu_3')
 
             # dropout
-            dropout_result = tf.nn.dropout(x=relu_3_result, keep_prob=self.keep_prob)
+            # dropout_result = tf.nn.dropout(x=relu_3_result, keep_prob=self.keep_prob)
 
             # print("layer 7 output shape", dropout_result.shape)
 
@@ -409,23 +409,23 @@ class UNet:
         with tf.name_scope('layer_8'):
             # copy, crop and merge
             result_merge = self.merge_results_from_contracting_and_upsampling(
-                result_from_contracting=self.result_from_contracting[2], result_from_upsampling=dropout_result)
+                result_from_contracting=self.result_from_contracting[2], result_from_upsampling=relu_3_result)
 
             # conv_1
             self.w[18] = self.init_w(shape=[3, 3, 256, 128], name='w_12')
             # self.b[18] = self.init_b(shape=[128], name='b_12')
             conv_1_result = tf.nn.conv2d(
                 input=result_merge, filter=self.w[18], strides=[1, 1, 1, 1], padding='SAME', name='conv_1')
-            normed_batch = self.batch_norm(x=conv_1_result, is_training=self.is_training, name='layer_8_conv_1')
-            relu_1_result = tf.nn.relu(features=normed_batch, name='relu_1')
+            # normed_batch = self.batch_norm(x=conv_1_result, is_training=self.is_training, name='layer_8_conv_1')
+            relu_1_result = tf.nn.relu(features=conv_1_result, name='relu_1')
 
             # conv_2
             self.w[19] = self.init_w(shape=[3, 3, 128, 128], name='w_10')
             # self.b[19] = self.init_b(shape=[128], name='b_10')
             conv_2_result = tf.nn.conv2d(
                 input=relu_1_result, filter=self.w[19], strides=[1, 1, 1, 1], padding='SAME', name='conv_2')
-            normed_batch = self.batch_norm(x=conv_2_result, is_training=self.is_training, name='layer_8_conv_2')
-            relu_2_result = tf.nn.relu(features=normed_batch, name='relu_2')
+            # normed_batch = self.batch_norm(x=conv_2_result, is_training=self.is_training, name='layer_8_conv_2')
+            relu_2_result = tf.nn.relu(features=conv_2_result, name='relu_2')
 
             # up_sampling
             self.w[20] = self.init_w(shape=[2, 2, 64, 128], name='w_11')
@@ -434,11 +434,11 @@ class UNet:
                 value=relu_2_result, filter=self.w[20],
                 output_shape=[batch_size, int(relu_2_result.shape[1]) * 2, int(relu_2_result.shape[2]) * 2, 64],
                 strides=[1, 2, 2, 1], padding='VALID', name='Up_Sampling')
-            normed_batch = self.batch_norm(x=result_up, is_training=self.is_training, name='layer_8_up')
-            relu_3_result = tf.nn.relu(features=normed_batch, name='relu_3')
+            # normed_batch = self.batch_norm(x=result_up, is_training=self.is_training, name='layer_8_up')
+            relu_3_result = tf.nn.relu(features=result_up, name='relu_3')
 
             # dropout
-            dropout_result = tf.nn.dropout(x=relu_3_result, keep_prob=self.keep_prob)
+            # dropout_result = tf.nn.dropout(x=relu_3_result, keep_prob=self.keep_prob)
 
             # print("layer 8 output shape", dropout_result.shape)
 
@@ -446,23 +446,23 @@ class UNet:
         with tf.name_scope('layer_9'):
             # copy, crop and merge
             result_merge = self.merge_results_from_contracting_and_upsampling(
-                result_from_contracting=self.result_from_contracting[1], result_from_upsampling=dropout_result)
+                result_from_contracting=self.result_from_contracting[1], result_from_upsampling=relu_3_result)
 
             # conv_1
             self.w[21] = self.init_w(shape=[3, 3, 128, 64], name='w_12')
             # self.b[21] = self.init_b(shape=[64], name='b_12')
             conv_1_result = tf.nn.conv2d(
                 input=result_merge, filter=self.w[21], strides=[1, 1, 1, 1], padding='SAME', name='conv_1')
-            normed_batch = self.batch_norm(x=conv_1_result, is_training=self.is_training, name='layer_9_conv_1')
-            relu_1_result = tf.nn.relu(features=normed_batch, name='relu_1')
+            # normed_batch = self.batch_norm(x=conv_1_result, is_training=self.is_training, name='layer_9_conv_1')
+            relu_1_result = tf.nn.relu(features=conv_1_result, name='relu_1')
 
             # conv_2
             self.w[22] = self.init_w(shape=[3, 3, 64, 64], name='w_10')
             # self.b[22] = self.init_b(shape=[64], name='b_10')
             conv_2_result = tf.nn.conv2d(
                 input=relu_1_result, filter=self.w[22], strides=[1, 1, 1, 1], padding='SAME', name='conv_2')
-            normed_batch = self.batch_norm(x=conv_2_result, is_training=self.is_training, name='layer_9_conv_2')
-            relu_2_result = tf.nn.relu(features=normed_batch, name='relu_2')
+            # normed_batch = self.batch_norm(x=conv_2_result, is_training=self.is_training, name='layer_9_conv_2')
+            relu_2_result = tf.nn.relu(features=conv_2_result, name='relu_2')
 
             # convolution to [batch_size, OUTPIT_IMG_WIDE, OUTPUT_IMG_HEIGHT, CLASS_NUM]
             self.w[23] = self.init_w(shape=[1, 1, 64, 3], name='w_11')
@@ -470,10 +470,10 @@ class UNet:
             result_conv_3 = tf.nn.conv2d(
                 input=relu_2_result, filter=self.w[23],
                 strides=[1, 1, 1, 1], padding='VALID', name='conv_3')
-            normed_batch = self.batch_norm(x=result_conv_3, is_training=self.is_training, name='layer_9_conv_3')
+            # normed_batch = self.batch_norm(x=result_conv_3, is_training=self.is_training, name='layer_9_conv_3')
             # self.prediction = tf.nn.relu(tf.nn.bias_add(result_conv_3, self.b[23], name='add_bias'), name='relu_3')
             # self.prediction = tf.nn.sigmoid(x=tf.nn.bias_add(result_conv_3, self.b[23], name='add_bias'), name='sigmoid_1')
-            self.prediction = normed_batch
+            self.prediction = result_conv_3
 
             # print("layer 9 output shape", self.prediction.shape)
 
@@ -715,7 +715,7 @@ if __name__ == '__main__':
 
     # dir for saving models
     parser.add_argument(
-        '--model_dir', type=str, default=SAVED_MODELS,
+        '--model_dir', type=str, default=SAVED_MODELS_DIR,
         help='path of dir for saving models')
 
     # dir for saving logs

@@ -1,6 +1,6 @@
 import argparse
 import tensorflow as tf
-import project_config as config
+import config as config
 
 PROJECT_DIR = config.get_project_path()
 OUTPUT_DIR = PROJECT_DIR + "/output/tf_implementation"

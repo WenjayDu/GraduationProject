@@ -2,7 +2,7 @@ import os
 import numpy as np
 from keras.preprocessing import image
 from module_minc_keras.utils import safe_h5py_open
-from project_config import get_pardir_containing_file
+from config import get_pardir_containing_file
 
 SAVE_PATH = get_pardir_containing_file(__file__) + "/datasets/examples/extracted_images"
 

@@ -2,7 +2,7 @@ import os
 import gzip
 import numpy as np
 import tensorflow as tf
-from project_config import GlobalVar, cal_np_unique_num
+from config import GlobalVar, cal_np_unique_num
 
 from module_pocketflow.datasets.abstract_dataset import AbstractDataset
 

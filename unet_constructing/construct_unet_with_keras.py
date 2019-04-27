@@ -1,12 +1,14 @@
 import os
 import sys
+import subprocess
+from keras.callbacks import TensorBoard
 
 curPath = os.path.abspath(os.path.dirname(__file__))
 rootPath = os.path.split(curPath)[0]
 sys.path.append(rootPath)
 
 import pickle
-from project_config import GlobalVar
+from config import GlobalVar
 from data_processing.prepare_datasets import prepare_mri_dataset
 from module_minc_keras.minc_keras import *
 
@@ -14,6 +16,9 @@ PROJECT_DIR = GlobalVar.PROJECT_PATH
 DATASET_DIR = GlobalVar.DATASET_PATH
 OUTPUT_DIR = GlobalVar.OUTPUT_PATH + "/keras_implementation"
 SERIALIZE_FILE = GlobalVar.DATASET_PATH + "/mri_pad_4_results/prepare_mri_dataset_return"
+
+LOGS_DIR = OUTPUT_DIR + "/logs"
+SAVED_MODELS_DIR = OUTPUT_DIR + "/saved_models"
 
 
 def main():
@@ -41,7 +46,7 @@ def main():
 
     # if you change the number of times you downsample with max_pool,
     # then you need to rerun prepare_data() with pad_base=<number of downsample nodes>
-    model_saving_path = OUTPUT_DIR + "/model_of_unet_at_mri.hdf5"
+    model_saving_path = SAVED_MODELS_DIR + "/model_of_unet_at_mri.hdf5"
 
     # Define the architecture of neural network
     IN = Input(shape=(data_mri_pad_4['image_dim'][1], data_mri_pad_4['image_dim'][2], 1))
@@ -105,7 +110,8 @@ def main():
     history = model.fit([X_train_mri_pad_4],
                         Y_train_mri_pad_4,
                         validation_data=([X_validate_mri_pad_4], Y_validate_mri_pad_4),
-                        epochs=3)
+                        epochs=3,
+                        callbacks=[TensorBoard(log_dir=LOGS_DIR)])
     # save model
     model.save(model_saving_path)
     # test model
@@ -114,4 +120,5 @@ def main():
 
 
 if __name__ == "__main__":
+    subprocess.call("mkdir -p " + SAVED_MODELS_DIR, shell=True)
     main()

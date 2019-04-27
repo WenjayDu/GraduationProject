@@ -1,6 +1,6 @@
 import tensorflow as tf
 from model_compressing.mri_dataset_for_pf import MriDataset
-from project_config import GlobalVar, cal_np_unique_num
+from config import GlobalVar, cal_np_unique_num
 from module_pocketflow.nets.abstract_model_helper import AbstractModelHelper
 from module_pocketflow.utils.multi_gpu_wrapper import MultiGpuWrapper as mgw
 from module_pocketflow.utils.lrn_rate_utils import setup_lrn_rate_piecewise_constant

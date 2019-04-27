@@ -1,5 +1,8 @@
 import os
 import numpy as np
+import logging
+
+logging.basicConfig(level=logging.INFO, format='%(levelname)s - %(asctime)s: %(message)s')
 
 
 # Global variables
