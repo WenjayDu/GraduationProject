@@ -2,7 +2,7 @@ import traceback
 import tensorflow as tf
 
 from model_compressing.unet_at_mri_for_pf import ModelHelper
-from module_pocketflow.learners.learner_utils import create_learner
+from learners.learner_utils import create_learner
 
 FLAGS = tf.app.flags.FLAGS
 

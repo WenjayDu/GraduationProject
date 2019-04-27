@@ -1,10 +1,8 @@
-import os
-import gzip
 import numpy as np
 import tensorflow as tf
-from config import GlobalVar, cal_np_unique_num
 
-from module_pocketflow.datasets.abstract_dataset import AbstractDataset
+from config import GlobalVar, cal_np_unique_num
+from datasets.abstract_dataset import AbstractDataset
 
 DATASET_PATH = GlobalVar.DATASET_PATH
 
