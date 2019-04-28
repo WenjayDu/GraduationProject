@@ -1,7 +1,7 @@
 import numpy as np
 import tensorflow as tf
 
-from config import GlobalVar, cal_np_unique_num
+from config_and_utils import GlobalVar, cal_np_unique_num
 from datasets.abstract_dataset import AbstractDataset
 
 DATASET_PATH = GlobalVar.DATASET_PATH
@@ -21,8 +21,8 @@ tf.app.flags.DEFINE_integer('nb_smpls_val',
 tf.app.flags.DEFINE_integer('nb_smpls_eval',
                             len(np.load(DATA_DIR + "/test_x.npy")),
                             '# of samples for evaluation')
-tf.app.flags.DEFINE_integer('batch_size', 128, 'batch size per GPU for training')
-tf.app.flags.DEFINE_integer('batch_size_eval', 64, 'batch size for evaluation')
+tf.app.flags.DEFINE_integer('batch_size', 1, 'batch size per GPU for training')
+tf.app.flags.DEFINE_integer('batch_size_eval', 1, 'batch size for evaluation')
 
 # Fashion-MNIST specifications
 IMAGE_HEI = 144
@@ -30,54 +30,15 @@ IMAGE_WID = 122
 IMAGE_CHN = 1
 
 
-def load_mnist(image_file, label_file):
-    """
-    Load images and labels for training
-
-    :param image_file: path of npy file containing images for training
-    :param label_file: path of npy file containing labels for training
-    :return:
-    """
-    images = np.load(image_file)
-    labels = np.load(label_file)
-    return images, labels
-
-
-def parse_fn(image, label, is_train):
-    """Parse an (image, label) pair and apply data augmentation if needed.
-
-    Args:
-    * image: image tensor
-    * label: label tensor
-    * is_train: whether data augmentation should be applied
-
-    Returns:
-    * image: image tensor
-    * label: one-hot label tensor
-    """
-
-    # data parsing
-    label = tf.one_hot(tf.reshape(label, []), FLAGS.nb_classes)
-    image = tf.cast(tf.reshape(image, [IMAGE_HEI, IMAGE_WID, IMAGE_CHN]), tf.float32)
-    image = tf.image.per_image_standardization(image)
-
-    # data augmentation
-    if is_train:
-        image = tf.image.resize_image_with_crop_or_pad(image, IMAGE_HEI + 8, IMAGE_WID + 8)
-        image = tf.random_crop(image, [IMAGE_HEI, IMAGE_WID, IMAGE_CHN])
-        image = tf.image.random_flip_left_right(image)
-
-    return image, label
-
-
 class MriDataset(AbstractDataset):
-    '''Fashion-MNIST dataset.'''
+    """
+    MRI dataset
+    """
 
     def __init__(self, is_train):
-        """Constructor function.
-
-        Args:
-        * is_train: whether to construct the training subset
+        """
+        Constructor function.
+        :param is_train: whether to construct the training subset
         """
 
         # initialize the base class
@@ -92,20 +53,18 @@ class MriDataset(AbstractDataset):
             self.batch_size = FLAGS.batch_size_eval
             image_file = DATA_DIR + '/validate_x.npy'
             label_file = DATA_DIR + '/validate_y.npy'
-        self.images, self.labels = load_mnist(image_file, label_file)
+        self.images, self.labels = load_npy(image_file, label_file)
         self.parse_fn = lambda x, y: parse_fn(x, y, is_train)
 
     def build(self, enbl_trn_val_split=False):
-        """Build iterator(s) for tf.data.Dataset() object.
+        """
+        Build iterator(s) for tf.data.Dataset() object.
 
-        Args:
-        * enbl_trn_val_split: whether to split into training & validation subsets
-
-        Returns:
-        * iterator_trn: iterator for the training subset
-        * iterator_val: iterator for the validation subset
-          OR
-        * iterator: iterator for the chosen subset (training OR testing)
+        :param enbl_trn_val_split: whether to split into training & validation subsets
+        :return: iterator_trn: iterator for the training subset
+                 iterator_val: iterator for the validation subset
+                 OR
+                 iterator: iterator for the chosen subset (training OR testing)
         """
 
         # create a tf.data.Dataset() object from NumPy arrays
@@ -136,3 +95,31 @@ class MriDataset(AbstractDataset):
         iterator = dataset.make_one_shot_iterator()
 
         return iterator
+
+
+def load_npy(image_file, label_file):
+    """
+    Load images and labels for training
+
+    :param image_file: path of npy file containing images for training
+    :param label_file: path of npy file containing labels for training
+    :return:
+    """
+    images = np.load(image_file)
+    labels = np.load(label_file)
+    return images, labels
+
+
+def parse_fn(image, label, is_train):
+    # data parsing
+    # label = tf.one_hot(tf.reshape(label, [IMAGE_HEI, IMAGE_WID, IMAGE_CHN]), FLAGS.nb_classes)
+    # image = tf.cast(tf.reshape(image, [IMAGE_HEI, IMAGE_WID, IMAGE_CHN]), tf.float32)
+    # image = tf.image.per_image_standardization(image)
+
+    # data augmentation
+    # if is_train:
+    #     image = tf.image.resize_image_with_crop_or_pad(image, IMAGE_HEI + 8, IMAGE_WID + 8)
+    #     image = tf.random_crop(image, [IMAGE_HEI, IMAGE_WID, IMAGE_CHN])
+    #     image = tf.image.random_flip_left_right(image)
+
+    return image, label

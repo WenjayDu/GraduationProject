@@ -6,7 +6,7 @@ rootPath = os.path.split(curPath)[0]
 sys.path.append(rootPath)
 
 import tensorflow as tf
-from config import GlobalVar
+from config_and_utils import GlobalVar, get_sorted_files
 from module_minc_keras.minc_keras import *
 from data_processing import convert_npy_to_tfrecords
 
@@ -30,7 +30,7 @@ PREDICT_BATCH_SIZE = 1
 ORIGIN_PREDICT_DIRECTORY = DATASET_DIR + "/examples/extracted_images/sub-00031_task-01_ses-01_T1w_anat_rsl"
 
 # the path of dir for saving imgs output from predicting operation
-PREDICT_SAVED_DIRECTORY = OUTPUT_DIR + "/prediction_saved"
+PREDICT_SAVED_DIRECTORY = OUTPUT_DIR + "/predictions"
 TEST_SAVED_DIRECTORY = OUTPUT_DIR + "/test_saved"
 
 INPUT_IMG_HEIGHT, INPUT_IMG_WIDTH, INPUT_IMG_CHANNEL = 144, 112, 1
@@ -158,11 +158,11 @@ class UNet:
             # learning_rate = tf.train.exponential_decay()
             self.input_image = tf.placeholder(
                 dtype=tf.float32,
-                shape=[batch_size, FLAGS.input_shape[0], FLAGS.input_shape[1], FLAGS.input_shape[2]],
+                shape=[batch_size, INPUT_IMG_HEIGHT, INPUT_IMG_WIDTH, INPUT_IMG_CHANNEL],
                 name='input_images'
             )
             self.input_label = tf.placeholder(
-                dtype=tf.int32, shape=[batch_size, FLAGS.input_shape[0], FLAGS.input_shape[1]],
+                dtype=tf.int32, shape=[batch_size, INPUT_IMG_HEIGHT, INPUT_IMG_WIDTH],
                 name='input_labels'
             )
 
@@ -182,7 +182,7 @@ class UNet:
         # layer 1
         with tf.name_scope('layer_1'):
             # conv_1
-            self.w[1] = self.init_w(shape=[3, 3, FLAGS.input_shape[2], 64], name='w_1')
+            self.w[1] = self.init_w(shape=[3, 3, INPUT_IMG_CHANNEL, 64], name='w_1')
             # self.b[1] = self.init_b(shape=[64], name='b_1')
             conv_1_result = tf.nn.conv2d(
                 input=normed_batch, filter=self.w[1], strides=[1, 1, 1, 1], padding='SAME', name='conv_1')
@@ -372,7 +372,7 @@ class UNet:
         with tf.name_scope('layer_7'):
             # copy, crop and merge
             result_merge = self.merge_results_from_contracting_and_upsampling(
-                result_from_contracting=self.result_from_contracting[3], result_from_upsampling=dropout_result)
+                result_from_contracting=self.result_from_contracting[3], result_from_upsampling=relu_3_result)
 
             # conv_1
             self.w[15] = self.init_w(shape=[3, 3, 512, 256], name='w_12')
@@ -508,8 +508,8 @@ class UNet:
 
     def train(self):
         train_image_filename_queue = tf.train.string_input_producer(
-            string_tensor=tf.train.match_filenames_once(TRAIN_SET_PATH), num_epochs=FLAGS.epoch_num, shuffle=True)
-        ckpt_path = os.path.join(FLAGS.model_dir, "model.ckpt")
+            string_tensor=tf.train.match_filenames_once(TRAIN_SET_PATH), num_epochs=EPOCH_NUM, shuffle=True)
+        ckpt_path = os.path.join(SAVED_MODELS_DIR, "model.ckpt")
         train_images, train_labels = read_image_batch(train_image_filename_queue, TRAIN_BATCH_SIZE)
         tf.summary.scalar("loss", self.loss_mean)
         tf.summary.scalar('accuracy', self.accuracy)
@@ -518,8 +518,8 @@ class UNet:
         with tf.Session() as sess:
             sess.run(tf.global_variables_initializer())
             sess.run(tf.local_variables_initializer())
-            summary_writer = tf.summary.FileWriter(FLAGS.log_dir, sess.graph)
-            tf.summary.FileWriter(FLAGS.model_dir, sess.graph)
+            summary_writer = tf.summary.FileWriter(LOGS_DIR, sess.graph)
+            tf.summary.FileWriter(SAVED_MODELS_DIR, sess.graph)
             coord = tf.train.Coordinator()
             threads = tf.train.start_queue_runners(coord=coord)
             try:
@@ -527,7 +527,7 @@ class UNet:
                 while not coord.should_stop():
                     # run training
                     example, label = sess.run([train_images, train_labels])  # get image and label，type is numpy.ndarry
-                    label = label.reshape(1, FLAGS.input_shape[0], FLAGS.input_shape[1])
+                    label = label.reshape(1, INPUT_IMG_HEIGHT, INPUT_IMG_WIDTH)
 
                     # example = example.reshape(144, 112, 1)
                     # from keras_preprocessing import image
@@ -563,7 +563,7 @@ class UNet:
     def validate(self):
         validation_image_filename_queue = tf.train.string_input_producer(
             string_tensor=tf.train.match_filenames_once(VALIDATE_SET_PATH), num_epochs=1, shuffle=True)
-        ckpt_path = os.path.join(FLAGS.model_dir, "model.ckpt")
+        ckpt_path = os.path.join(SAVED_MODELS_DIR, "model.ckpt")
         validation_images, validation_labels = read_image_batch(validation_image_filename_queue, VALIDATION_BATCH_SIZE)
         # tf.summary.scalar("loss", self.loss_mean)
         # tf.summary.scalar('accuracy', self.accuracy)
@@ -581,7 +581,7 @@ class UNet:
                 epoch = 1
                 while not coord.should_stop():
                     example, label = sess.run([validation_images, validation_labels])
-                    label = label.reshape(1, FLAGS.input_shape[0], FLAGS.input_shape[1])
+                    label = label.reshape(1, INPUT_IMG_HEIGHT, INPUT_IMG_WIDTH)
                     lo, acc = sess.run(
                         [self.loss_mean, self.accuracy],
                         feed_dict={
@@ -603,7 +603,7 @@ class UNet:
         import cv2
         test_image_filename_queue = tf.train.string_input_producer(
             string_tensor=tf.train.match_filenames_once(TEST_SET_PATH), num_epochs=1, shuffle=True)
-        ckpt_path = os.path.join(FLAGS.model_dir, "model.ckpt")
+        ckpt_path = os.path.join(SAVED_MODELS_DIR, "model.ckpt")
         test_images, test_labels = read_image_batch(test_image_filename_queue, TEST_BATCH_SIZE)
         # tf.summary.scalar("loss", self.loss_mean)
         # tf.summary.scalar('accuracy', self.accuracy)
@@ -622,7 +622,7 @@ class UNet:
                 epoch = 0
                 while not coord.should_stop():
                     example, label = sess.run([test_images, test_labels])
-                    label = label.reshape(1, FLAGS.input_shape[0], FLAGS.input_shape[1])
+                    label = label.reshape(1, INPUT_IMG_HEIGHT, INPUT_IMG_WIDTH)
                     img, acc = sess.run(
                         [tf.argmax(input=self.prediction, axis=3), self.accuracy],
                         feed_dict={
@@ -643,15 +643,13 @@ class UNet:
             coord.join(threads)
         print('Done testing')
 
-    def predict(self):
+    def predict(self, ckpt_path=SAVED_MODELS_DIR + "/model.ckpt"):
         from keras.preprocessing import image
-        import glob
         import numpy as np
-        predict_file_path = glob.glob(os.path.join(ORIGIN_PREDICT_DIRECTORY, '*.png'))
-        print("quantity of imgs used to predict is ", len(predict_file_path))
+        image_list = get_sorted_files(ORIGIN_PREDICT_DIRECTORY, "png")
+        print(len(image_list), "images to be predicted")
         if not os.path.lexists(PREDICT_SAVED_DIRECTORY):
             os.mkdir(PREDICT_SAVED_DIRECTORY)
-        ckpt_path = os.path.join(FLAGS.model_dir, "model.ckpt")  # CHECK_POINT_PATH
         all_parameters_saver = tf.train.Saver()
         with tf.Session() as sess:
             sess.run(tf.global_variables_initializer())
@@ -659,26 +657,20 @@ class UNet:
             # summary_writer = tf.summary.FileWriter(FLAGS.log_dir, sess.graph)
             # tf.summary.FileWriter(FLAGS.model_dir, sess.graph)
             all_parameters_saver.restore(sess=sess, save_path=ckpt_path)
-            for index, image_path in enumerate(predict_file_path):
+            for index, image_path in enumerate(image_list):
                 original_img = image.load_img(image_path,
                                               target_size=(
-                                                  FLAGS.output_shape[0], FLAGS.output_shape[1], FLAGS.output_shape[2]),
+                                                  OUTPUT_IMG_HEIGHT, OUTPUT_IMG_WIDTH, OUTPUT_IMG_CHANNEL),
                                               color_mode="grayscale")
                 original_img = image.img_to_array(original_img)
                 img = np.expand_dims(original_img, axis=0)
-                print("img shape:", img.shape)
-                test = tf.argmax(input=self.prediction, axis=0)
-                print("test shape", test.shape)
-                print("test", test)
                 predict_image = sess.run(self.prediction,
                                          feed_dict={
                                              self.input_image: img, self.keep_prob: 1.0, self.lamb: 0.004,
                                              self.is_training: False
                                          }
                                          )
-                print("predict_image shape:", predict_image.shape)
-                predict_image = predict_image.reshape(FLAGS.output_shape[0], FLAGS.output_shape[1],
-                                                      FLAGS.output_shape[2])
+                predict_image = predict_image.reshape(OUTPUT_IMG_HEIGHT, OUTPUT_IMG_WIDTH, OUTPUT_IMG_CHANNEL)
                 image.save_img(os.path.join(PREDICT_SAVED_DIRECTORY, '%d.png' % index), predict_image * 255)
         print('Done prediction')
 
@@ -742,6 +734,8 @@ if __name__ == '__main__':
 
     if not os.path.exists(TEST_SAVED_DIRECTORY):
         os.system("mkdir " + TEST_SAVED_DIRECTORY)
+    if not os.path.exists(PREDICT_SAVED_DIRECTORY):
+        os.system("mkdir " + PREDICT_SAVED_DIRECTORY)
 
     if not os.path.exists(TRAIN_SET_PATH):
         print(".tfrecords files used to train do not exist, generating now...")

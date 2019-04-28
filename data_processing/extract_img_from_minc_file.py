@@ -2,7 +2,8 @@ import os
 import numpy as np
 from keras.preprocessing import image
 from module_minc_keras.utils import safe_h5py_open
-from config import get_pardir_containing_file
+from config_and_utils import get_pardir_containing_file
+from config_and_utils import get_sorted_files
 
 SAVE_PATH = get_pardir_containing_file(__file__) + "/datasets/examples/extracted_images"
 
@@ -54,9 +55,7 @@ def create_gif(gif_name, dir_path, duration=0.25):
     if gif_name.split(".")[-1] is not "gif":
         gif_name = gif_name + ".gif"
     frames = []
-    png_files = os.listdir(dir_path)
-    png_files.sort(key=lambda x: int(x[:-4]))
-    image_list = [os.path.join(dir_path, f) for f in png_files]
+    image_list = get_sorted_files(dir_path, "png")
     for image_name in image_list:
         frames.append(imageio.imread(image_name))
     imageio.mimsave(gif_name, frames, 'GIF', duration=duration)

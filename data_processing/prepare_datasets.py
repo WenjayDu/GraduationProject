@@ -1,6 +1,6 @@
 import os
 import pickle
-from config import GlobalVar
+from config_and_utils import GlobalVar
 from module_minc_keras.minc_keras import setup_dirs
 from module_minc_keras.prepare_data import prepare_data
 

@@ -1,7 +1,7 @@
 import os
 import numpy as np
 import tensorflow as tf
-from config import GlobalVar
+from config_and_utils import GlobalVar
 from keras_preprocessing import image
 
 PROJECT_DIR = GlobalVar.PROJECT_PATH

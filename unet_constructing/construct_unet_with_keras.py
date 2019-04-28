@@ -8,7 +8,7 @@ rootPath = os.path.split(curPath)[0]
 sys.path.append(rootPath)
 
 import pickle
-from config import GlobalVar
+from config_and_utils import GlobalVar
 from data_processing.prepare_datasets import prepare_mri_dataset
 from module_minc_keras.minc_keras import *
 
@@ -24,7 +24,7 @@ SAVED_MODELS_DIR = OUTPUT_DIR + "/saved_models"
 def main():
     if os.path.exists(SERIALIZE_FILE):
         with open(SERIALIZE_FILE, "rb") as f:
-            print("Deserialized file:", SERIALIZE_FILE, "done")
+            print("Done deserializing file:", SERIALIZE_FILE)
             [images_mri_pad_4, data_mri_pad_4] = pickle.load(f)
     else:
         [images_mri_pad_4, data_mri_pad_4] = prepare_mri_dataset()

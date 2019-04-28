@@ -1,4 +1,5 @@
 import os
+import glob
 import numpy as np
 import logging
 
@@ -34,3 +35,22 @@ def get_pardir_containing_file(file):
 
 def cal_np_unique_num(file_path):
     return len(np.unique(np.load(file_path)))
+
+
+def get_sorted_files(dir_path, file_suffix):
+    """
+    used to get sorted list of file from a dir, like 0.png, 1.png, 2.png
+    :param dir_path:
+    :param file_suffix:
+    :return:
+    """
+    if file_suffix.split(".")[0] != "":
+        file_suffix = "." + file_suffix
+    num_of_chars = -len(file_suffix)
+    files = glob.glob(os.path.join(dir_path, "*" + file_suffix))
+    simplified_files = []
+    for i in files:
+        simplified_files.append(i.split("/")[-1])
+    simplified_files.sort(key=lambda x: int(x[:num_of_chars]))
+    file_list = [os.path.join(dir_path, f) for f in simplified_files]
+    return file_list
