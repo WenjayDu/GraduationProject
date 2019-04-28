@@ -16,7 +16,7 @@ def serialize_object(data, file_path):
         pickle.dump(data, f)
 
 
-def prepare_mri_dataset():
+def prepare_mri_dataset(ratios=[0.75, 0.15]):
     """
     used to prepare mri dataset with padding = 4
     """
@@ -41,7 +41,8 @@ def prepare_mri_dataset():
                           input_str='_T1w_anat_rsl.mnc',
                           label_str='variant-seg',
                           pad_base=4,
-                          clobber=True)
+                          clobber=True,
+                          ratios=ratios)
     os.chdir(PROJECT_PATH)
     serialize_object(result, SERIALIZE_FILE)
     print("result of def prepare_data() has been writen to", SERIALIZE_FILE)
