@@ -1,10 +1,9 @@
 import numpy as np
 import tensorflow as tf
-
-from config_and_utils import GlobalVar, cal_np_unique_num
 from datasets.abstract_dataset import AbstractDataset
+from model_compressing.config import GlobalPath, cal_np_unique_num
 
-DATASET_PATH = GlobalVar.DATASET_PATH
+DATASET_PATH = GlobalPath.DATASET_PATH
 
 DATA_DIR = DATASET_PATH + "/mri_pad_4_results/data"
 
@@ -23,11 +22,6 @@ tf.app.flags.DEFINE_integer('nb_smpls_eval',
                             '# of samples for evaluation')
 tf.app.flags.DEFINE_integer('batch_size', 1, 'batch size per GPU for training')
 tf.app.flags.DEFINE_integer('batch_size_eval', 1, 'batch size for evaluation')
-
-# Fashion-MNIST specifications
-IMAGE_HEI = 144
-IMAGE_WID = 122
-IMAGE_CHN = 1
 
 
 class MriDataset(AbstractDataset):
@@ -89,7 +83,7 @@ class MriDataset(AbstractDataset):
         * iterator: iterator for the dataset
         """
         dataset = dataset.apply(tf.contrib.data.shuffle_and_repeat(buffer_size=FLAGS.buffer_size))
-        print("❗️done shffle and repeat")
+        print("❗️done shuffling and repeating")
         dataset = dataset.batch(self.batch_size)
         print("❗️done setting batch")
         dataset = dataset.prefetch(FLAGS.prefetch_size)
