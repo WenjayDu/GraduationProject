@@ -484,6 +484,8 @@ class UNet:
             # 	tf.nn.softmax_cross_entropy_with_logits(labels=self.cast_label, logits=self.prediction, name='loss')
 
             # not using one-hot
+            print("❗️self.input_label shape", self.input_label.shape, "❗️self.prediction shape", self.prediction.shape)
+            print("❗️self.input_label dtype", self.input_label.dtype, "❗️self.prediction dtype", self.prediction.dtype)
             self.loss = \
                 tf.nn.sparse_softmax_cross_entropy_with_logits(labels=self.input_label, logits=self.prediction,
                                                                name='loss')
