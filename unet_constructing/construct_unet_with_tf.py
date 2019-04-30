@@ -22,7 +22,7 @@ LOGS_DIR = OUTPUT_DIR + "/logs"
 SAVED_MODELS_DIR = OUTPUT_DIR + "/saved_models"
 
 TRAIN_BATCH_SIZE = 1
-VALIDATION_BATCH_SIZE = 1
+VALIDATE_BATCH_SIZE = 1
 TEST_BATCH_SIZE = 1
 PREDICT_BATCH_SIZE = 1
 
@@ -47,7 +47,7 @@ EPOCH_NUM = 1
 EPS = 10e-5
 
 
-def read_image(file_queue):
+def read_image(file_queue, shape=INPUT_SHAPE):
     reader = tf.TFRecordReader()
     _, serialized_example = reader.read(file_queue)
     features = tf.parse_single_example(
@@ -58,10 +58,10 @@ def read_image(file_queue):
         })
 
     data = tf.decode_raw(features['data'], np.float16)
-    data = tf.reshape(data, [FLAGS.input_shape[0], FLAGS.input_shape[1], FLAGS.input_shape[2]])
+    data = tf.reshape(data, shape)
 
     label = tf.decode_raw(features['label'], np.float16)
-    label = tf.reshape(label, [FLAGS.input_shape[0], FLAGS.input_shape[1], FLAGS.input_shape[2]])
+    label = tf.reshape(label, shape)
 
     return data, label
 
@@ -512,11 +512,15 @@ class UNet:
         train_image_filename_queue = tf.train.string_input_producer(
             string_tensor=tf.train.match_filenames_once(TRAIN_SET_PATH), num_epochs=EPOCH_NUM, shuffle=True)
         ckpt_path = os.path.join(SAVED_MODELS_DIR, "model.ckpt")
-        train_images, train_labels = read_image_batch(train_image_filename_queue, TRAIN_BATCH_SIZE)
+        train_images, train_labels = read_image_batch(train_image_filename_queue, FLAGS.train_batch_size)
         tf.summary.scalar("loss", self.loss_mean)
         tf.summary.scalar('accuracy', self.accuracy)
         merged_summary = tf.summary.merge_all()
         all_parameters_saver = tf.train.Saver()
+        if FLAGS.train_batch_size < 16:
+            divisor = FLAGS.train_batch_size * 1000
+        else:
+            divisor = FLAGS.train_batch_size * 100
         with tf.Session() as sess:
             sess.run(tf.global_variables_initializer())
             sess.run(tf.local_variables_initializer())
@@ -529,7 +533,7 @@ class UNet:
                 while not coord.should_stop():
                     # run training
                     example, label = sess.run([train_images, train_labels])  # get image and label，type is numpy.ndarry
-                    label = label.reshape(1, INPUT_IMG_HEIGHT, INPUT_IMG_WIDTH)
+                    # label = label.reshape(1, INPUT_IMG_HEIGHT, INPUT_IMG_WIDTH)
 
                     # example = example.reshape(144, 112, 1)
                     # from keras_preprocessing import image
@@ -541,11 +545,14 @@ class UNet:
                     lo, acc, summary_str = sess.run(
                         [self.loss_mean, self.accuracy, merged_summary],
                         feed_dict={
-                            self.input_image: example, self.input_label: label, self.keep_prob: 1.0,
-                            self.lamb: 0.004, self.is_training: True}
+                            self.input_image: example,
+                            self.input_label: label,
+                            self.keep_prob: 1.0,
+                            self.lamb: 0.004,
+                            self.is_training: True}
                     )
                     summary_writer.add_summary(summary_str, epoch)
-                    if epoch % 1000 == 0:
+                    if epoch % divisor == 0:
                         print('num %d , loss: %.6f , accuracy: %.6f' % (epoch, lo, acc))
                     sess.run(
                         [self.train_step],
@@ -566,11 +573,16 @@ class UNet:
         validation_image_filename_queue = tf.train.string_input_producer(
             string_tensor=tf.train.match_filenames_once(VALIDATE_SET_PATH), num_epochs=1, shuffle=True)
         ckpt_path = os.path.join(SAVED_MODELS_DIR, "model.ckpt")
-        validation_images, validation_labels = read_image_batch(validation_image_filename_queue, VALIDATION_BATCH_SIZE)
+        validation_images, validation_labels = read_image_batch(validation_image_filename_queue,
+                                                                FLAGS.validate_batch_size)
         # tf.summary.scalar("loss", self.loss_mean)
         # tf.summary.scalar('accuracy', self.accuracy)
         # merged_summary = tf.summary.merge_all()
         all_parameters_saver = tf.train.Saver()
+        if FLAGS.train_batch_size < 16:
+            divisor = FLAGS.validate_batch_size * 1000
+        else:
+            divisor = FLAGS.validate_batch_size * 100
         with tf.Session() as sess:
             sess.run(tf.global_variables_initializer())
             sess.run(tf.local_variables_initializer())
@@ -583,15 +595,18 @@ class UNet:
                 epoch = 1
                 while not coord.should_stop():
                     example, label = sess.run([validation_images, validation_labels])
-                    label = label.reshape(1, INPUT_IMG_HEIGHT, INPUT_IMG_WIDTH)
+                    # label = label.reshape(1, INPUT_IMG_HEIGHT, INPUT_IMG_WIDTH)
                     lo, acc = sess.run(
                         [self.loss_mean, self.accuracy],
                         feed_dict={
-                            self.input_image: example, self.input_label: label, self.keep_prob: 1.0,
-                            self.lamb: 0.004, self.is_training: False}
+                            self.input_image: example,
+                            self.input_label: label,
+                            self.keep_prob: 1.0,
+                            self.lamb: 0.004,
+                            self.is_training: False}
                     )
                     # summary_writer.add_summary(summary_str, epoch)
-                    if epoch % 100 == 0:
+                    if epoch % divisor == 0:
                         print('num %d , loss: %.6f , accuracy: %.6f' % (epoch, lo, acc))
                     epoch += 1
             except tf.errors.OutOfRangeError:
@@ -606,11 +621,15 @@ class UNet:
         test_image_filename_queue = tf.train.string_input_producer(
             string_tensor=tf.train.match_filenames_once(TEST_SET_PATH), num_epochs=1, shuffle=True)
         ckpt_path = os.path.join(SAVED_MODELS_DIR, "model.ckpt")
-        test_images, test_labels = read_image_batch(test_image_filename_queue, TEST_BATCH_SIZE)
+        test_images, test_labels = read_image_batch(test_image_filename_queue, FLAGS.test_batch_size)
         # tf.summary.scalar("loss", self.loss_mean)
         # tf.summary.scalar('accuracy', self.accuracy)
         # merged_summary = tf.summary.merge_all()
         all_parameters_saver = tf.train.Saver()
+        if FLAGS.train_batch_size < 16:
+            divisor = 1000
+        else:
+            divisor = 10
         with tf.Session() as sess:
             sess.run(tf.global_variables_initializer())
             sess.run(tf.local_variables_initializer())
@@ -624,18 +643,21 @@ class UNet:
                 epoch = 0
                 while not coord.should_stop():
                     example, label = sess.run([test_images, test_labels])
-                    label = label.reshape(1, INPUT_IMG_HEIGHT, INPUT_IMG_WIDTH)
+                    # label = label.reshape(1, INPUT_IMG_HEIGHT, INPUT_IMG_WIDTH)
                     img, acc = sess.run(
                         [tf.argmax(input=self.prediction, axis=3), self.accuracy],
                         feed_dict={
-                            self.input_image: example, self.input_label: label,
-                            self.keep_prob: 1.0, self.lamb: 0.004, self.is_training: False
+                            self.input_image: example,
+                            self.input_label: label,
+                            self.keep_prob: 1.0,
+                            self.lamb: 0.004,
+                            self.is_training: False
                         }
                     )
                     sum_acc += acc
                     epoch += 1
                     cv2.imwrite(os.path.join(TEST_SAVED_DIRECTORY, '%d.png' % epoch), img[0] * 255)
-                    if epoch % 100 == 0:
+                    if epoch % divisor == 0:
                         print('num %d , accuracy: %.6f' % (epoch, acc))
             except tf.errors.OutOfRangeError:
                 print(
@@ -668,7 +690,9 @@ class UNet:
                 img = np.expand_dims(original_img, axis=0)
                 predict_image = sess.run(self.prediction,
                                          feed_dict={
-                                             self.input_image: img, self.keep_prob: 1.0, self.lamb: 0.004,
+                                             self.input_image: img,
+                                             self.keep_prob: 1.0,
+                                             self.lamb: 0.004,
                                              self.is_training: False
                                          }
                                          )
@@ -679,22 +703,22 @@ class UNet:
 
 def main():
     net = UNet()
-    net.build_up_unet(TRAIN_BATCH_SIZE)
+    net.build_up_unet(FLAGS.train_batch_size)
     print("❗️start training...")
     net.train()
 
     tf.reset_default_graph()
-    net.build_up_unet(VALIDATION_BATCH_SIZE)
+    net.build_up_unet(FLAGS.validate_batch_size)
     print("❗️start validating...")
     net.validate()
 
     tf.reset_default_graph()
-    net.build_up_unet(TEST_BATCH_SIZE)
+    net.build_up_unet(FLAGS.test_batch_size)
     print("❗️start testing...")
     net.test()
 
     tf.reset_default_graph()
-    net.build_up_unet(PREDICT_BATCH_SIZE)
+    net.build_up_unet(FLAGS.predict_batch_size)
     print("❗️start predicting...")
     net.predict()
 
@@ -706,31 +730,42 @@ if __name__ == '__main__':
     parser.add_argument(
         '--dataset_dir', type=str, default=DATASET_DIR,
         help='path of dir storing input dataset')
-
     # dir for saving models
     parser.add_argument(
         '--model_dir', type=str, default=SAVED_MODELS_DIR,
         help='path of dir for saving models')
-
     # dir for saving logs
     parser.add_argument(
         '--log_dir', type=str, default=LOGS_DIR,
         help='path of dir for saving tensorboard logs')
-
     # input image shape
     parser.add_argument(
         '--input_shape', type=tuple, default=INPUT_SHAPE,
         help='shape of the input image, channel last, a tuple like (144,112,1)')
-
     # output image shape
     parser.add_argument(
         '--output_shape', type=tuple, default=OUTPUT_SHAPE,
         help='shape of the output image, channel last, a tuple like (144,112,3)')
-
     # epoch num
     parser.add_argument(
         '--epoch_num', type=int, default=EPOCH_NUM,
         help='number of epochs')
+    # train batch size
+    parser.add_argument(
+        '--train_batch_size', type=int, default=TRAIN_BATCH_SIZE,
+        help='train batch size')
+    # validate batch size
+    parser.add_argument(
+        '--validate_batch_size', type=int, default=VALIDATE_BATCH_SIZE,
+        help='validate batch size')
+    # test batch size
+    parser.add_argument(
+        '--test_batch_size', type=int, default=TEST_BATCH_SIZE,
+        help='test batch size')
+    # predict batch size
+    parser.add_argument(
+        '--predict_batch_size', type=int, default=PREDICT_BATCH_SIZE,
+        help='predict batch size')
 
     FLAGS, _ = parser.parse_known_args()
 
