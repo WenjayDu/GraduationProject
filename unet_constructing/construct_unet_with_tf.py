@@ -79,6 +79,15 @@ def read_image_batch(file_queue, batch_size):
     return image_batch, label_batch
 
 
+def step_size_of_showing_result(batch_size):
+    if batch_size == 1 or batch_size == 2:
+        return 1000
+    elif batch_size < 32:
+        return 100
+    else:
+        return 10
+
+
 class UNet:
     def __init__(self):
         print('Constructing New U-Net Network...')
@@ -162,7 +171,7 @@ class UNet:
                 name='input_images'
             )
             self.input_label = tf.placeholder(
-                dtype=tf.int32, shape=[batch_size, INPUT_IMG_HEIGHT, INPUT_IMG_WIDTH],
+                dtype=tf.int32, shape=[batch_size, INPUT_IMG_HEIGHT, INPUT_IMG_WIDTH, INPUT_IMG_CHANNEL],
                 name='input_labels'
             )
 
@@ -486,9 +495,11 @@ class UNet:
             # not using one-hot
             print("❗️self.input_label shape", self.input_label.shape, "❗️self.prediction shape", self.prediction.shape)
             print("❗️self.input_label dtype", self.input_label.dtype, "❗️self.prediction dtype", self.prediction.dtype)
-            self.loss = \
-                tf.nn.sparse_softmax_cross_entropy_with_logits(labels=self.input_label, logits=self.prediction,
-                                                               name='loss')
+            # make self.input_label's rank -1
+            self.input_label = tf.reshape(self.input_label, [batch_size, INPUT_IMG_HEIGHT, INPUT_IMG_WIDTH])
+            self.loss = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=self.input_label,
+                                                                       logits=self.prediction,
+                                                                       name='loss')
             self.loss_mean = tf.reduce_mean(self.loss)
             tf.add_to_collection(name='loss', value=self.loss_mean)
             self.loss_all = tf.add_n(inputs=tf.get_collection(key='loss'))
@@ -517,10 +528,7 @@ class UNet:
         tf.summary.scalar('accuracy', self.accuracy)
         merged_summary = tf.summary.merge_all()
         all_parameters_saver = tf.train.Saver()
-        if FLAGS.train_batch_size < 16:
-            divisor = FLAGS.train_batch_size * 1000
-        else:
-            divisor = FLAGS.train_batch_size * 100
+        divisor = step_size_of_showing_result(FLAGS.train_batch_size)
         with tf.Session() as sess:
             sess.run(tf.global_variables_initializer())
             sess.run(tf.local_variables_initializer())
@@ -529,11 +537,13 @@ class UNet:
             coord = tf.train.Coordinator()
             threads = tf.train.start_queue_runners(coord=coord)
             try:
-                epoch = 1
+                epoch = 0
                 while not coord.should_stop():
                     # run training
                     example, label = sess.run([train_images, train_labels])  # get image and label，type is numpy.ndarry
-                    # label = label.reshape(1, INPUT_IMG_HEIGHT, INPUT_IMG_WIDTH)
+                    # print("train example shape", example.shape, "label shape", label.shape)
+                    label = label.reshape(FLAGS.train_batch_size, INPUT_IMG_HEIGHT, INPUT_IMG_WIDTH)
+                    # print("label shape", label.shape)
 
                     # example = example.reshape(144, 112, 1)
                     # from keras_preprocessing import image
@@ -552,8 +562,6 @@ class UNet:
                             self.is_training: True}
                     )
                     summary_writer.add_summary(summary_str, epoch)
-                    if epoch % divisor == 0:
-                        print('num %d , loss: %.6f , accuracy: %.6f' % (epoch, lo, acc))
                     sess.run(
                         [self.train_step],
                         feed_dict={
@@ -561,13 +569,16 @@ class UNet:
                             self.lamb: 0.004, self.is_training: True}
                     )
                     epoch += 1
+                    if epoch % divisor == 0:
+                        print('num %d , loss: %.6f , accuracy: %.6f' % (epoch * FLAGS.train_batch_size, lo, acc))
             except tf.errors.OutOfRangeError:
                 print('Done training -- epoch limit reached')
             finally:
                 all_parameters_saver.save(sess=sess, save_path=ckpt_path)
                 coord.request_stop()
             coord.join(threads)
-        print("Done training")
+        print('Done training. Total: num %d , loss: %.6f , accuracy: %.6f'
+              % (epoch * FLAGS.train_batch_size, lo, acc))
 
     def validate(self):
         validation_image_filename_queue = tf.train.string_input_producer(
@@ -579,10 +590,7 @@ class UNet:
         # tf.summary.scalar('accuracy', self.accuracy)
         # merged_summary = tf.summary.merge_all()
         all_parameters_saver = tf.train.Saver()
-        if FLAGS.train_batch_size < 16:
-            divisor = FLAGS.validate_batch_size * 1000
-        else:
-            divisor = FLAGS.validate_batch_size * 100
+        divisor = step_size_of_showing_result(FLAGS.validate_batch_size)
         with tf.Session() as sess:
             sess.run(tf.global_variables_initializer())
             sess.run(tf.local_variables_initializer())
@@ -592,10 +600,10 @@ class UNet:
             coord = tf.train.Coordinator()
             threads = tf.train.start_queue_runners(coord=coord)
             try:
-                epoch = 1
+                epoch = 0
                 while not coord.should_stop():
                     example, label = sess.run([validation_images, validation_labels])
-                    # label = label.reshape(1, INPUT_IMG_HEIGHT, INPUT_IMG_WIDTH)
+                    label = label.reshape(FLAGS.validate_batch_size, INPUT_IMG_HEIGHT, INPUT_IMG_WIDTH)
                     lo, acc = sess.run(
                         [self.loss_mean, self.accuracy],
                         feed_dict={
@@ -606,15 +614,16 @@ class UNet:
                             self.is_training: False}
                     )
                     # summary_writer.add_summary(summary_str, epoch)
-                    if epoch % divisor == 0:
-                        print('num %d , loss: %.6f , accuracy: %.6f' % (epoch, lo, acc))
                     epoch += 1
+                    if epoch % divisor == 0:
+                        print('num %d , loss: %.6f , accuracy: %.6f' % (epoch * FLAGS.validate_batch_size, lo, acc))
             except tf.errors.OutOfRangeError:
                 print('Done validating -- epoch limit reached')
             finally:
                 coord.request_stop()
             coord.join(threads)
-        print('Done validating')
+        print('Done validating. Total: num %d , loss: %.6f , accuracy: %.6f'
+              % (epoch * FLAGS.validate_batch_size, lo, acc))
 
     def test(self):
         import cv2
@@ -626,10 +635,7 @@ class UNet:
         # tf.summary.scalar('accuracy', self.accuracy)
         # merged_summary = tf.summary.merge_all()
         all_parameters_saver = tf.train.Saver()
-        if FLAGS.train_batch_size < 16:
-            divisor = 1000
-        else:
-            divisor = 10
+        divisor = step_size_of_showing_result(FLAGS.test_batch_size)
         with tf.Session() as sess:
             sess.run(tf.global_variables_initializer())
             sess.run(tf.local_variables_initializer())
@@ -643,7 +649,7 @@ class UNet:
                 epoch = 0
                 while not coord.should_stop():
                     example, label = sess.run([test_images, test_labels])
-                    # label = label.reshape(1, INPUT_IMG_HEIGHT, INPUT_IMG_WIDTH)
+                    label = label.reshape(FLAGS.test_batch_size, INPUT_IMG_HEIGHT, INPUT_IMG_WIDTH)
                     img, acc = sess.run(
                         [tf.argmax(input=self.prediction, axis=3), self.accuracy],
                         feed_dict={
@@ -655,23 +661,23 @@ class UNet:
                         }
                     )
                     sum_acc += acc
-                    epoch += 1
                     cv2.imwrite(os.path.join(TEST_SAVED_DIRECTORY, '%d.png' % epoch), img[0] * 255)
+                    epoch += 1
                     if epoch % divisor == 0:
-                        print('num %d , accuracy: %.6f' % (epoch, acc))
+                        print('num %d ,  accuracy: %.6f' % (epoch * FLAGS.test_batch_size, acc))
             except tf.errors.OutOfRangeError:
                 print(
-                    'Done testing -- epoch limit reached \n Average accuracy: %.2f%%' % (sum_acc / epoch * 100))
+                    'Done testing -- epoch limit reached')
             finally:
                 coord.request_stop()
             coord.join(threads)
-        print('Done testing')
+        print('Done testing. Average accuracy: %.6f%%' % (sum_acc / epoch))
 
     def predict(self, ckpt_path=SAVED_MODELS_DIR + "/model.ckpt"):
         from keras.preprocessing import image
         import numpy as np
         image_list = get_sorted_files(ORIGIN_PREDICT_DIRECTORY, "png")
-        print(len(image_list), "images to be predicted")
+        print(len(image_list), "images to be predicted, and predictions will be saved to", PREDICT_SAVED_DIRECTORY)
         if not os.path.lexists(PREDICT_SAVED_DIRECTORY):
             os.mkdir(PREDICT_SAVED_DIRECTORY)
         all_parameters_saver = tf.train.Saver()
