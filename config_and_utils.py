@@ -1,4 +1,4 @@
-import os
+import os, sys
 import glob
 import numpy as np
 import logging
@@ -54,3 +54,24 @@ def get_sorted_files(dir_path, file_suffix):
     simplified_files.sort(key=lambda x: int(x[:num_of_chars]))
     file_list = [os.path.join(dir_path, f) for f in simplified_files]
     return file_list
+
+
+def print_gpu_status():
+    # to use this func, you should install gputil, psutil, humanize modules first
+    try:
+        import psutil
+        import humanize
+        import GPUtil as GPU
+    except Exception as e:
+        print("❌import error, please make sure that gputil, psutil, humanize modules are installed")
+        sys.exit(1)
+
+    GPUs = GPU.getGPUs()
+    gpu = GPUs[0]  # there is only one gpu on colab, this may be not guaranteed
+    process = psutil.Process(os.getpid())
+    print("\nGen RAM Free: " + humanize.naturalsize(psutil.virtual_memory().available),
+          " | Proc size: " + humanize.naturalsize(process.memory_info().rss))
+    print("GPU RAM Free: {0:.0f}MB | Used: {1:.0f}MB | Util {2:3.0f}% | Total {3:.0f}MB\n".format(gpu.memoryFree,
+                                                                                                gpu.memoryUsed,
+                                                                                                gpu.memoryUtil * 100,
+                                                                                                gpu.memoryTotal))
