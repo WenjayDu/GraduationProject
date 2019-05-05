@@ -1,9 +1,9 @@
-import argparse
+import argparse, sys
 import tensorflow as tf
-import config_and_utils as config
+from config_and_utils import GlobalVar
 
-PROJECT_DIR = config.get_project_path()
-OUTPUT_DIR = PROJECT_DIR + "/output/tf_implementation"
+PROJECT_DIR = GlobalVar.PROJECT_PATH
+OUTPUT_DIR = GlobalVar.OUTPUT_PATH + "/tf_implementation"
 SAVED_MODELS = OUTPUT_DIR + "/saved_models"
 FROZEN_GRAPH_FILE = SAVED_MODELS + "/frozen_graph.pb"
 
@@ -20,7 +20,7 @@ def freeze_graph(model_dir=SAVED_MODELS, output_node_names=OUTPUT_NODE_NAMES):
     """
     if not tf.gfile.Exists(model_dir):
         print("Model directory containing ckpt doesn't exists.")
-        exit(1)
+        sys.exit(1)
 
     checkpoint = tf.train.get_checkpoint_state(model_dir)
     input_checkpoint = checkpoint.model_checkpoint_path
@@ -45,8 +45,8 @@ def freeze_graph(model_dir=SAVED_MODELS, output_node_names=OUTPUT_NODE_NAMES):
         # serialize the output graph
         with tf.gfile.GFile(FROZEN_GRAPH_FILE, "wb") as f:
             f.write(output_graph.SerializeToString())
-        print("Done freezing the graph to ", FROZEN_GRAPH_FILE)
-        print("a tatal of %d ops in the output graph." % len(output_graph.node))
+        print("🚩Done freezing the graph to ", FROZEN_GRAPH_FILE)
+        print("🚩A tatal of %d ops in the output graph." % len(output_graph.node))
 
     return output_graph
 
@@ -66,15 +66,17 @@ def restore_graph(frozen_graph_filename=FROZEN_GRAPH_FILE):
                     node.input[index] = node.input[index] + '/read'
         elif node.op == 'AssignSub':
             node.op = 'Sub'
-            if 'use_locking' in node.attr: del node.attr['use_locking']
+            if 'use_locking' in node.attr:
+                del node.attr['use_locking']
         elif node.op == 'AssignAdd':
             node.op = 'Add'
-            if 'use_locking' in node.attr: del node.attr['use_locking']
+            if 'use_locking' in node.attr:
+                del node.attr['use_locking']
 
     # import into a new Graph and return
     with tf.Graph().as_default() as graph:
         tf.import_graph_def(graph_def, name="prefix")
-    print("Done restoring the graph from the ", frozen_graph_filename)
+    print("🚩Done restoring the graph from the ", frozen_graph_filename)
     return graph
 
 

@@ -2,10 +2,9 @@ import os
 import numpy as np
 from keras.preprocessing import image
 from module_minc_keras.utils import safe_h5py_open
-from config_and_utils import get_pardir_containing_file
-from config_and_utils import get_sorted_files
+from config_and_utils import GlobalVar, get_sorted_files
 
-SAVE_PATH = get_pardir_containing_file(__file__) + "/datasets/examples/extracted_images"
+SAVE_PATH = GlobalVar.DATASET_PATH + "/examples/extracted_images"
 
 
 def extract_img(minc_file=None, save_path=None):
@@ -39,7 +38,7 @@ def extract_img(minc_file=None, save_path=None):
         filename = save_dir + '/' + str(i) + '.png'
         image.save_img(filename, data)
     minc_file.close()
-    print("images have been saved to " + save_dir)
+    print("🚩Extracted images have been saved to " + save_dir)
 
 
 def create_gif(gif_name, dir_path, duration=0.25):
@@ -59,4 +58,4 @@ def create_gif(gif_name, dir_path, duration=0.25):
     for image_name in image_list:
         frames.append(imageio.imread(image_name))
     imageio.mimsave(gif_name, frames, 'GIF', duration=duration)
-    print("gif file ./" + gif_name + " generated successfully")
+    print("🚩gif file ./" + gif_name + " generated successfully")
