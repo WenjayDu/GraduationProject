@@ -527,12 +527,12 @@ class UNet:
         train_image_filename_queue = tf.train.string_input_producer(
             string_tensor=tf.train.match_filenames_once(TRAIN_SET_PATH), num_epochs=EPOCH_NUM, shuffle=True)
         ckpt_path = os.path.join(SAVED_MODELS_DIR, "model.ckpt")
-        train_images, train_labels = read_image_batch(train_image_filename_queue, FLAGS.train_batch_size)
+        train_images, train_labels = read_image_batch(train_image_filename_queue, TRAIN_BATCH_SIZE)
         tf.summary.scalar("loss", self.loss_mean)
         tf.summary.scalar('accuracy', self.accuracy)
         merged_summary = tf.summary.merge_all()
         all_parameters_saver = tf.train.Saver()
-        divisor = step_size_of_showing_result(FLAGS.train_batch_size)
+        divisor = step_size_of_showing_result(TRAIN_BATCH_SIZE)
         with tf.Session() as sess:
             sess.run(tf.global_variables_initializer())
             sess.run(tf.local_variables_initializer())
@@ -546,7 +546,7 @@ class UNet:
                     # run training
                     example, label = sess.run([train_images, train_labels])  # get image and label，type is numpy.ndarry
                     # print("train example shape", example.shape, "label shape", label.shape)
-                    label = label.reshape(FLAGS.train_batch_size, INPUT_IMG_HEIGHT, INPUT_IMG_WIDTH)
+                    label = label.reshape(TRAIN_BATCH_SIZE, INPUT_IMG_HEIGHT, INPUT_IMG_WIDTH)
                     # print("label shape", label.shape)
 
                     # example = example.reshape(144, 112, 1)
@@ -574,7 +574,7 @@ class UNet:
                     )
                     epoch += 1
                     if epoch % divisor == 0:
-                        print('num %d , loss: %.6f , accuracy: %.6f' % (epoch * FLAGS.train_batch_size, lo, acc))
+                        print('num %d , loss: %.6f , accuracy: %.6f' % (epoch * TRAIN_BATCH_SIZE, lo, acc))
             except tf.errors.OutOfRangeError:
                 print('❗️Done training -- epoch limit reached')
             finally:
@@ -582,24 +582,24 @@ class UNet:
                 coord.request_stop()
             coord.join(threads)
         print('❗️Done training. Total: num %d , loss: %.6f , accuracy: %.6f\n'
-              % (epoch * FLAGS.train_batch_size, lo, acc))
+              % (epoch * TRAIN_BATCH_SIZE, lo, acc))
 
     def validate(self):
         validation_image_filename_queue = tf.train.string_input_producer(
             string_tensor=tf.train.match_filenames_once(VALIDATE_SET_PATH), num_epochs=1, shuffle=True)
         ckpt_path = os.path.join(SAVED_MODELS_DIR, "model.ckpt")
         validation_images, validation_labels = read_image_batch(validation_image_filename_queue,
-                                                                FLAGS.validate_batch_size)
+                                                                VALIDATE_BATCH_SIZE)
         # tf.summary.scalar("loss", self.loss_mean)
         # tf.summary.scalar('accuracy', self.accuracy)
         # merged_summary = tf.summary.merge_all()
         all_parameters_saver = tf.train.Saver()
-        divisor = step_size_of_showing_result(FLAGS.validate_batch_size)
+        divisor = step_size_of_showing_result(VALIDATE_BATCH_SIZE)
         with tf.Session() as sess:
             sess.run(tf.global_variables_initializer())
             sess.run(tf.local_variables_initializer())
-            # summary_writer = tf.summary.FileWriter(FLAGS.log_dir, sess.graph)
-            # tf.summary.FileWriter(FLAGS.model_dir, sess.graph)
+            # summary_writer = tf.summary.FileWriter(LOGS_DIR, sess.graph)
+            # tf.summary.FileWriter(SAVED_MODELS_DIR, sess.graph)
             all_parameters_saver.restore(sess=sess, save_path=ckpt_path)
             coord = tf.train.Coordinator()
             threads = tf.train.start_queue_runners(coord=coord)
@@ -607,7 +607,7 @@ class UNet:
                 epoch = 0
                 while not coord.should_stop():
                     example, label = sess.run([validation_images, validation_labels])
-                    label = label.reshape(FLAGS.validate_batch_size, INPUT_IMG_HEIGHT, INPUT_IMG_WIDTH)
+                    label = label.reshape(VALIDATE_BATCH_SIZE, INPUT_IMG_HEIGHT, INPUT_IMG_WIDTH)
                     lo, acc = sess.run(
                         [self.loss_mean, self.accuracy],
                         feed_dict={
@@ -620,31 +620,31 @@ class UNet:
                     # summary_writer.add_summary(summary_str, epoch)
                     epoch += 1
                     if epoch % divisor == 0:
-                        print('num %d , loss: %.6f , accuracy: %.6f' % (epoch * FLAGS.validate_batch_size, lo, acc))
+                        print('num %d , loss: %.6f , accuracy: %.6f' % (epoch * VALIDATE_BATCH_SIZE, lo, acc))
             except tf.errors.OutOfRangeError:
                 print('❗️Done validating -- epoch limit reached')
             finally:
                 coord.request_stop()
             coord.join(threads)
         print('❗️Done validating. Total: num %d , loss: %.6f , accuracy: %.6f\n'
-              % (epoch * FLAGS.validate_batch_size, lo, acc))
+              % (epoch * VALIDATE_BATCH_SIZE, lo, acc))
 
     def test(self):
         import cv2
         test_image_filename_queue = tf.train.string_input_producer(
             string_tensor=tf.train.match_filenames_once(TEST_SET_PATH), num_epochs=1, shuffle=True)
         ckpt_path = os.path.join(SAVED_MODELS_DIR, "model.ckpt")
-        test_images, test_labels = read_image_batch(test_image_filename_queue, FLAGS.test_batch_size)
+        test_images, test_labels = read_image_batch(test_image_filename_queue, TEST_BATCH_SIZE)
         # tf.summary.scalar("loss", self.loss_mean)
         # tf.summary.scalar('accuracy', self.accuracy)
         # merged_summary = tf.summary.merge_all()
         all_parameters_saver = tf.train.Saver()
-        divisor = step_size_of_showing_result(FLAGS.test_batch_size)
+        divisor = step_size_of_showing_result(TEST_BATCH_SIZE)
         with tf.Session() as sess:
             sess.run(tf.global_variables_initializer())
             sess.run(tf.local_variables_initializer())
-            # summary_writer = tf.summary.FileWriter(FLAGS.log_dir, sess.graph)
-            # tf.summary.FileWriter(FLAGS.model_dir, sess.graph)
+            # summary_writer = tf.summary.FileWriter(LOGS_DIR, sess.graph)
+            # tf.summary.FileWriter(SAVED_MODELS_DIR, sess.graph)
             all_parameters_saver.restore(sess=sess, save_path=ckpt_path)
             coord = tf.train.Coordinator()
             threads = tf.train.start_queue_runners(coord=coord)
@@ -653,7 +653,7 @@ class UNet:
                 epoch = 0
                 while not coord.should_stop():
                     example, label = sess.run([test_images, test_labels])
-                    label = label.reshape(FLAGS.test_batch_size, INPUT_IMG_HEIGHT, INPUT_IMG_WIDTH)
+                    label = label.reshape(TEST_BATCH_SIZE, INPUT_IMG_HEIGHT, INPUT_IMG_WIDTH)
                     img, acc = sess.run(
                         [tf.argmax(input=self.prediction, axis=3), self.accuracy],
                         feed_dict={
@@ -668,7 +668,7 @@ class UNet:
                     cv2.imwrite(os.path.join(TEST_SAVED_DIRECTORY, '%d.png' % epoch), img[0] * 255)
                     epoch += 1
                     if epoch % divisor == 0:
-                        print('num %d ,  accuracy: %.6f' % (epoch * FLAGS.test_batch_size, acc))
+                        print('num %d ,  accuracy: %.6f' % (epoch * TEST_BATCH_SIZE, acc))
             except tf.errors.OutOfRangeError:
                 print('❗️Done testing -- epoch limit reached')
             finally:
@@ -687,8 +687,8 @@ class UNet:
         with tf.Session() as sess:
             sess.run(tf.global_variables_initializer())
             sess.run(tf.local_variables_initializer())
-            # summary_writer = tf.summary.FileWriter(FLAGS.log_dir, sess.graph)
-            # tf.summary.FileWriter(FLAGS.model_dir, sess.graph)
+            # summary_writer = tf.summary.FileWriter(LOGS_DIR, sess.graph)
+            # tf.summary.FileWriter(SAVED_MODELS_DIR, sess.graph)
             all_parameters_saver.restore(sess=sess, save_path=ckpt_path)
             for index, image_path in enumerate(image_list):
                 original_img = image.load_img(image_path,
@@ -754,12 +754,12 @@ if __name__ == '__main__':
         help='path of dir for saving tensorboard logs')
     # input image shape
     parser.add_argument(
-        '--input_shape', type=tuple, default=INPUT_SHAPE,
-        help='shape of the input image, channel last, a tuple like (144,112,1)')
+        '--input_shape', type=str, default=INPUT_SHAPE,
+        help='shape of the input image, channel last, a tuple like "(144,112,1)"')
     # output image shape
     parser.add_argument(
-        '--output_shape', type=tuple, default=OUTPUT_SHAPE,
-        help='shape of the output image, channel last, a tuple like (144,112,3)')
+        '--output_shape', type=str, default=OUTPUT_SHAPE,
+        help='shape of the output image, channel last, a tuple like "(144,112,3)"')
     # epoch num
     parser.add_argument(
         '--epoch_num', type=int, default=EPOCH_NUM,
@@ -798,6 +798,17 @@ if __name__ == '__main__':
         help='whether to predict, yes/no')
 
     FLAGS, _ = parser.parse_known_args()
+
+    if type(FLAGS.input_shape) == str:
+        (INPUT_IMG_HEIGHT, INPUT_IMG_WIDTH, INPUT_IMG_CHANNEL) = eval(FLAGS.input_shape)
+        INPUT_SHAPE = eval(FLAGS.input_shape)
+    if type(FLAGS.output_shape) == str:
+        (OUTPUT_IMG_HEIGHT, OUTPUT_IMG_WIDTH, OUTPUT_IMG_CHANNEL) = eval(FLAGS.ouput_shape)
+        OUTPUT_SHAPE = eval(FLAGS.output_shape)
+    EPOCH_NUM = FLAGS.epoch_num
+    TRAIN_BATCH_SIZE = FLAGS.train_batch_size
+    VALIDATE_BATCH_SIZE = FLAGS.validate_batch_size
+    TEST_BATCH_SIZE = FLAGS.test_batch_size
 
     if not os.path.exists(TEST_SAVED_DIRECTORY):
         os.system("mkdir " + TEST_SAVED_DIRECTORY)
