@@ -576,12 +576,12 @@ class UNet:
                     if epoch % divisor == 0:
                         print('num %d , loss: %.6f , accuracy: %.6f' % (epoch * FLAGS.train_batch_size, lo, acc))
             except tf.errors.OutOfRangeError:
-                print('Done training -- epoch limit reached')
+                print('❗️Done training -- epoch limit reached')
             finally:
                 all_parameters_saver.save(sess=sess, save_path=ckpt_path)
                 coord.request_stop()
             coord.join(threads)
-        print('Done training. Total: num %d , loss: %.6f , accuracy: %.6f'
+        print('❗️Done training. Total: num %d , loss: %.6f , accuracy: %.6f\n'
               % (epoch * FLAGS.train_batch_size, lo, acc))
 
     def validate(self):
@@ -622,11 +622,11 @@ class UNet:
                     if epoch % divisor == 0:
                         print('num %d , loss: %.6f , accuracy: %.6f' % (epoch * FLAGS.validate_batch_size, lo, acc))
             except tf.errors.OutOfRangeError:
-                print('Done validating -- epoch limit reached')
+                print('❗️Done validating -- epoch limit reached')
             finally:
                 coord.request_stop()
             coord.join(threads)
-        print('Done validating. Total: num %d , loss: %.6f , accuracy: %.6f'
+        print('❗️Done validating. Total: num %d , loss: %.6f , accuracy: %.6f\n'
               % (epoch * FLAGS.validate_batch_size, lo, acc))
 
     def test(self):
@@ -670,12 +670,11 @@ class UNet:
                     if epoch % divisor == 0:
                         print('num %d ,  accuracy: %.6f' % (epoch * FLAGS.test_batch_size, acc))
             except tf.errors.OutOfRangeError:
-                print(
-                    'Done testing -- epoch limit reached')
+                print('❗️Done testing -- epoch limit reached')
             finally:
                 coord.request_stop()
             coord.join(threads)
-        print('Done testing. Average accuracy: %.6f%%' % (sum_acc / epoch))
+        print('❗️Done testing. Average accuracy: %.6f%%\n' % (sum_acc / epoch))
 
     def predict(self, ckpt_path=SAVED_MODELS_DIR + "/model.ckpt"):
         from keras.preprocessing import image
@@ -708,29 +707,30 @@ class UNet:
                                          )
                 save_path = os.path.join(PREDICTION_SAVED_DIRECTORY, '%d.png' % index)
                 predict_with_models.to_hot_cmap(predict_image, save_path, argmax_axis=3)
-        print('Done prediction')
+        print('❗️Done prediction\n')
 
 
 def main():
     net = UNet()
-    net.build_up_unet(FLAGS.train_batch_size)
-    print("🚩️start training...")
-    net.train()
-
-    tf.reset_default_graph()
-    net.build_up_unet(FLAGS.validate_batch_size)
-    print("🚩start validating...")
-    net.validate()
-
-    tf.reset_default_graph()
-    net.build_up_unet(FLAGS.test_batch_size)
-    print("🚩️start testing...")
-    net.test()
-
-    tf.reset_default_graph()
-    net.build_up_unet(FLAGS.predict_batch_size)
-    print("🚩️start predicting...")
-    net.predict()
+    if FLAGS.to_train == "yes":
+        net.build_up_unet(FLAGS.train_batch_size)
+        print("🚩️start training...")
+        net.train()
+    if FLAGS.to_validate == "yes":
+        tf.reset_default_graph()
+        net.build_up_unet(FLAGS.validate_batch_size)
+        print("🚩start validating...")
+        net.validate()
+    if FLAGS.to_test == "yes":
+        tf.reset_default_graph()
+        net.build_up_unet(FLAGS.test_batch_size)
+        print("🚩️start testing...")
+        net.test()
+    if FLAGS.to_predict == "yes":
+        tf.reset_default_graph()
+        net.build_up_unet(FLAGS.predict_batch_size)
+        print("🚩️start predicting...")
+        net.predict()
 
 
 if __name__ == '__main__':
@@ -776,6 +776,22 @@ if __name__ == '__main__':
     parser.add_argument(
         '--predict_batch_size', type=int, default=PREDICT_BATCH_SIZE,
         help='predict batch size')
+    # whether to train
+    parser.add_argument(
+        '--to_train', type=str, default="yes",
+        help='whether to train, yes/no')
+    # whether to validate
+    parser.add_argument(
+        '--to_validate', type=str, default="yes",
+        help='whether to validate, yes/on')
+    # whether to test
+    parser.add_argument(
+        '--to_test', type=str, default="yes",
+        help='whether to test, yes/no')
+    # whether to predict
+    parser.add_argument(
+        '--to_predict', type=str, default="yes",
+        help='whether to predict, yes/no')
 
     FLAGS, _ = parser.parse_known_args()
 
