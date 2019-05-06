@@ -62,14 +62,14 @@ class MriDataset(AbstractDataset):
         """
 
         # create a tf.data.Dataset() object from NumPy arrays
-        print("❗️now at MriDataset.build()")
+        print("🚩️now at MriDataset.build()")
         dataset = tf.data.Dataset.from_tensor_slices((self.images, self.labels))
         dataset = dataset.map(self.parse_fn, num_parallel_calls=FLAGS.nb_threads)
-        print("❗️build(): creating iterators")
+        print("🚩️build(): creating iterators")
         # create iterators for training & validation subsets separately
         if self.is_train and enbl_trn_val_split:
             iterator_val = self.__make_iterator(dataset.take(FLAGS.nb_smpls_val))
-            iterator_trn = self.__make_iterator(dataset.skip(FLAGS.nb_smpls_val))
+            iterator_trn = self.__make_iterator(dataset.skip(FLAGS.nb_smpls_train))
             return iterator_trn, iterator_val
         return self.__make_iterator(dataset)
 
@@ -83,13 +83,13 @@ class MriDataset(AbstractDataset):
         * iterator: iterator for the dataset
         """
         dataset = dataset.apply(tf.contrib.data.shuffle_and_repeat(buffer_size=FLAGS.buffer_size))
-        print("❗️done shuffling and repeating")
+        print("🚩done shuffling and repeating")
         dataset = dataset.batch(self.batch_size)
-        print("❗️done setting batch")
+        print("🚩️done setting batch")
         dataset = dataset.prefetch(FLAGS.prefetch_size)
-        print("❗done setting prefetch️")
+        print("🚩done setting prefetch️")
         iterator = dataset.make_one_shot_iterator()
-        print("❗done making iterator")
+        print("🚩done making iterator")
 
         return iterator
 

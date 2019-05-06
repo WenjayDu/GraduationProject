@@ -8,7 +8,7 @@ sys.path.append(rootPath)
 import tensorflow as tf
 from config_and_utils import GlobalVar, get_sorted_files
 from module_minc_keras.minc_keras import *
-from data_processing import convert_npy_to_tfrecords
+from data_processing import convert_npy_to_tfrecords, predict_with_models
 
 PROJECT_DIR = GlobalVar.PROJECT_PATH
 DATASET_DIR = GlobalVar.DATASET_PATH
@@ -30,7 +30,7 @@ PREDICT_BATCH_SIZE = 1
 ORIGIN_PREDICT_DIRECTORY = DATASET_DIR + "/examples/extracted_images/sub-00031_task-01_ses-01_T1w_anat_rsl"
 
 # the path of dir for saving imgs output from predicting operation
-PREDICT_SAVED_DIRECTORY = OUTPUT_DIR + "/predictions"
+PREDICTION_SAVED_DIRECTORY = OUTPUT_DIR + "/predictions"
 TEST_SAVED_DIRECTORY = OUTPUT_DIR + "/test_saved"
 
 INPUT_IMG_HEIGHT, INPUT_IMG_WIDTH, INPUT_IMG_CHANNEL = 144, 112, 1
@@ -493,13 +493,17 @@ class UNet:
             # 	tf.nn.softmax_cross_entropy_with_logits(labels=self.cast_label, logits=self.prediction, name='loss')
 
             # not using one-hot
-            print("❗️self.input_label shape", self.input_label.shape, "❗️self.prediction shape", self.prediction.shape)
-            print("❗️self.input_label dtype", self.input_label.dtype, "❗️self.prediction dtype", self.prediction.dtype)
+            # print("🚩️self.input_label shape", self.input_label.shape, "🚩self.prediction shape", self.prediction.shape)
+            # print("🚩️self.input_label dtype", self.input_label.dtype, "🚩self.prediction dtype", self.prediction.dtype)
             # make self.input_label's rank -1
             self.input_label = tf.reshape(self.input_label, [batch_size, INPUT_IMG_HEIGHT, INPUT_IMG_WIDTH])
             self.loss = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=self.input_label,
                                                                        logits=self.prediction,
                                                                        name='loss')
+
+            # self.prediction = tf.cast(self.prediction, tf.int32)
+            # print("self.input_label.dtype", self.input_label.dtype, "self.prediction dtype", self.prediction.dtype)
+            # self.loss = tf.keras.backend.categorical_crossentropy(self.input_label, self.prediction)
             self.loss_mean = tf.reduce_mean(self.loss)
             tf.add_to_collection(name='loss', value=self.loss_mean)
             self.loss_all = tf.add_n(inputs=tf.get_collection(key='loss'))
@@ -677,9 +681,9 @@ class UNet:
         from keras.preprocessing import image
         import numpy as np
         image_list = get_sorted_files(ORIGIN_PREDICT_DIRECTORY, "png")
-        print(len(image_list), "images to be predicted, and predictions will be saved to", PREDICT_SAVED_DIRECTORY)
-        if not os.path.lexists(PREDICT_SAVED_DIRECTORY):
-            os.mkdir(PREDICT_SAVED_DIRECTORY)
+        print("🚩️", len(image_list), "images to be predicted, will be saved to", PREDICTION_SAVED_DIRECTORY)
+        if not os.path.lexists(PREDICTION_SAVED_DIRECTORY):
+            os.mkdir(PREDICTION_SAVED_DIRECTORY)
         all_parameters_saver = tf.train.Saver()
         with tf.Session() as sess:
             sess.run(tf.global_variables_initializer())
@@ -702,30 +706,30 @@ class UNet:
                                              self.is_training: False
                                          }
                                          )
-                predict_image = predict_image.reshape(OUTPUT_IMG_HEIGHT, OUTPUT_IMG_WIDTH, OUTPUT_IMG_CHANNEL)
-                image.save_img(os.path.join(PREDICT_SAVED_DIRECTORY, '%d.png' % index), predict_image * 255)
+                save_path = os.path.join(PREDICTION_SAVED_DIRECTORY, '%d.png' % index)
+                predict_with_models.to_hot_cmap(predict_image, save_path, argmax_axis=3)
         print('Done prediction')
 
 
 def main():
     net = UNet()
     net.build_up_unet(FLAGS.train_batch_size)
-    print("❗️start training...")
+    print("🚩️start training...")
     net.train()
 
     tf.reset_default_graph()
     net.build_up_unet(FLAGS.validate_batch_size)
-    print("❗️start validating...")
+    print("🚩start validating...")
     net.validate()
 
     tf.reset_default_graph()
     net.build_up_unet(FLAGS.test_batch_size)
-    print("❗️start testing...")
+    print("🚩️start testing...")
     net.test()
 
     tf.reset_default_graph()
     net.build_up_unet(FLAGS.predict_batch_size)
-    print("❗️start predicting...")
+    print("🚩️start predicting...")
     net.predict()
 
 
@@ -777,11 +781,11 @@ if __name__ == '__main__':
 
     if not os.path.exists(TEST_SAVED_DIRECTORY):
         os.system("mkdir " + TEST_SAVED_DIRECTORY)
-    if not os.path.exists(PREDICT_SAVED_DIRECTORY):
-        os.system("mkdir " + PREDICT_SAVED_DIRECTORY)
+    if not os.path.exists(PREDICTION_SAVED_DIRECTORY):
+        os.system("mkdir " + PREDICTION_SAVED_DIRECTORY)
 
     if not os.path.exists(TRAIN_SET_PATH):
-        print(".tfrecords files used to train do not exist, generating now...")
+        print("❗️.tfrecords files used to train do not exist, generating now...")
         convert_npy_to_tfrecords.main()
 
     main()

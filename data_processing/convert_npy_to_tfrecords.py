@@ -73,20 +73,21 @@ def main():
         train_data = np.load(DATA_DIR + "/train_x.npy")
         train_label = np.load(DATA_DIR + "/train_y.npy")
         convert_to_tfrecords(train_data, train_label, TARGET_PATH_DIR + "/train.tfrecords")
-        print("converting the train dataset done!")
+        print("🚩converting the train dataset done!")
 
         test_data = np.load(DATA_DIR + "/test_x.npy")
         test_label = np.load(DATA_DIR + "/test_y.npy")
         convert_to_tfrecords(test_data, test_label, TARGET_PATH_DIR + "/test.tfrecords")
-        print("converting the test dataset done!")
+        print("🚩converting the test dataset done!")
 
         validate_data = np.load(DATA_DIR + "/validate_x.npy")
         validate_label = np.load(DATA_DIR + "/validate_y.npy")
         convert_to_tfrecords(validate_data, validate_label, TARGET_PATH_DIR + "/validate.tfrecords")
-        print("converting the validate dataset done!")
+        print("🚩converting the validate dataset done!")
     else:
         print(
-            "default .npy files do not exists in " + DATA_DIR + ", please run ./prepare_datasets.py to generate them")
+            "❗️Error: default .npy files do not exists in " + DATA_DIR +
+            ", please run ./prepare_datasets.py to generate them")
         return 1
 
 
