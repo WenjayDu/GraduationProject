@@ -680,7 +680,7 @@ class UNet:
         from keras.preprocessing import image
         import numpy as np
         image_list = get_sorted_files(ORIGIN_PREDICT_DIRECTORY, "png")
-        print("🚩️", len(image_list), "images to be predicted, will be saved to", PREDICTION_SAVED_DIRECTORY)
+        print("🚩️" + str(len(image_list)) + " images to be predicted, will be saved to", PREDICTION_SAVED_DIRECTORY)
         if not os.path.lexists(PREDICTION_SAVED_DIRECTORY):
             os.mkdir(PREDICTION_SAVED_DIRECTORY)
         all_parameters_saver = tf.train.Saver()
@@ -705,8 +705,12 @@ class UNet:
                                              self.is_training: False
                                          }
                                          )
-                save_path = os.path.join(PREDICTION_SAVED_DIRECTORY, '%d.png' % index)
-                predict_with_models.to_hot_cmap(predict_image, save_path, argmax_axis=3)
+                # save_path = os.path.join(PREDICTION_SAVED_DIRECTORY, '%d.png' % index)
+                # predict_with_models.to_hot_cmap(predict_image, save_path, argmax_axis=3)
+                predict_image = predict_image.reshape(OUTPUT_IMG_HEIGHT, OUTPUT_IMG_WIDTH, OUTPUT_IMG_CHANNEL)
+                image.save_img(os.path.join(PREDICTION_SAVED_DIRECTORY, '%d.png' % index), predict_image * 255)
+        print("🚩Predictions are saved, now converting them to 'hot' color map")
+        predict_with_models.to_hot_cmap(PREDICTION_SAVED_DIRECTORY)
         print('❗️Done prediction\n')
 
 
