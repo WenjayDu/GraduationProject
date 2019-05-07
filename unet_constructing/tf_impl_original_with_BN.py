@@ -12,12 +12,7 @@ from data_processing import convert_npy_to_tfrecords, predict_with_models
 
 PROJECT_DIR = GlobalVar.PROJECT_PATH
 DATASET_DIR = GlobalVar.DATASET_PATH
-OUTPUT_DIR = GlobalVar.OUTPUT_PATH + "/tf_implementation"
-
-TRAIN_SET_PATH = DATASET_DIR + "/tfrecords/train.tfrecords"
-VALIDATE_SET_PATH = DATASET_DIR + "/tfrecords/validate.tfrecords"
-TEST_SET_PATH = DATASET_DIR + "/tfrecords/test.tfrecords"
-
+OUTPUT_DIR = GlobalVar.OUTPUT_PATH + "/tf_impl_original_with_BN"
 LOGS_DIR = OUTPUT_DIR + "/logs"
 SAVED_MODELS_DIR = OUTPUT_DIR + "/saved_models"
 
@@ -33,12 +28,7 @@ ORIGIN_PREDICT_DIRECTORY = DATASET_DIR + "/examples/extracted_images/sub-00031_t
 PREDICTION_SAVED_DIRECTORY = OUTPUT_DIR + "/predictions"
 TEST_SAVED_DIRECTORY = OUTPUT_DIR + "/test_saved"
 
-INPUT_IMG_HEIGHT, INPUT_IMG_WIDTH, INPUT_IMG_CHANNEL = 144, 112, 1
-INPUT_SHAPE = (INPUT_IMG_HEIGHT, INPUT_IMG_WIDTH, INPUT_IMG_CHANNEL)
-
-OUTPUT_IMG_HEIGHT, OUTPUT_IMG_WIDTH, OUTPUT_IMG_CHANNEL = 144, 112, 3
-OUTPUT_SHAPE = (OUTPUT_IMG_HEIGHT, OUTPUT_IMG_WIDTH, OUTPUT_IMG_CHANNEL)
-
+DATASET_NAME = "mri"
 EPOCH_NUM = 1
 
 # EPS below is the value added to denominator in BN operation,
@@ -47,7 +37,7 @@ EPOCH_NUM = 1
 EPS = 10e-5
 
 
-def read_image(file_queue, shape=INPUT_SHAPE):
+def read_image(file_queue, shape):
     reader = tf.TFRecordReader()
     _, serialized_example = reader.read(file_queue)
     features = tf.parse_single_example(
@@ -67,7 +57,7 @@ def read_image(file_queue, shape=INPUT_SHAPE):
 
 
 def read_image_batch(file_queue, batch_size):
-    img, label = read_image(file_queue)
+    img, label = read_image(file_queue, shape=INPUT_SHAPE)
     min_after_dequeue = 500
     capacity = 510
     # image_batch, label_batch = tf.train.batch([img, label], batch_size=batch_size, capacity=capacity, num_threads=10)
@@ -184,26 +174,24 @@ class UNet:
             self.lamb = tf.placeholder(dtype=tf.float32, name='lambda')
 
             self.is_training = tf.placeholder(dtype=tf.bool, name='is_training')
-            normed_batch = self.batch_norm(x=self.input_image, is_training=self.is_training, name='input')
-
-            # print("input layer output shape", normed_batch.shape)
 
         # layer 1
         with tf.name_scope('layer_1'):
+            normed_batch = self.batch_norm(x=self.input_image, is_training=self.is_training, name='layer1_BN1')
             # conv_1
             self.w[1] = self.init_w(shape=[3, 3, INPUT_IMG_CHANNEL, 64], name='w_1')
             # self.b[1] = self.init_b(shape=[64], name='b_1')
             conv_1_result = tf.nn.conv2d(
                 input=normed_batch, filter=self.w[1], strides=[1, 1, 1, 1], padding='SAME', name='conv_1')
-            # normed_batch = self.batch_norm(x=conv_1_result, is_training=self.is_training, name='layer_1_conv_1')
             relu_1_result = tf.nn.relu(conv_1_result, name='relu_1')
+
+            normed_batch = self.batch_norm(x=relu_1_result, is_training=self.is_training, name='layer1_BN2')
 
             # conv_2
             self.w[2] = self.init_w(shape=[3, 3, 64, 64], name='w_2')
             # self.b[2] = self.init_b(shape=[64], name='b_2')
             conv_2_result = tf.nn.conv2d(
-                input=relu_1_result, filter=self.w[2], strides=[1, 1, 1, 1], padding='SAME', name='conv_2')
-            # normed_batch = self.batch_norm(x=conv_2_result, is_training=self.is_training, name='layer_1_conv_2')
+                input=normed_batch, filter=self.w[2], strides=[1, 1, 1, 1], padding='SAME', name='conv_2')
             relu_2_result = tf.nn.relu(features=conv_2_result, name='relu_2')
             self.result_from_contracting[1] = relu_2_result  # saved for up sampling below
 
@@ -212,27 +200,23 @@ class UNet:
                 value=relu_2_result, ksize=[1, 2, 2, 1],
                 strides=[1, 2, 2, 1], padding='VALID', name='maxpool')
 
-            # dropout
-            # dropout_result = tf.nn.dropout(x=maxpool_result, keep_prob=self.keep_prob)
-
-            # print("layer 1 output shape", dropout_result.shape)
-
         # layer 2
         with tf.name_scope('layer_2'):
+            normed_batch = self.batch_norm(x=maxpool_result, is_training=self.is_training, name='layer2_BN1')
             # conv_1
             self.w[3] = self.init_w(shape=[3, 3, 64, 128], name='w_3')
             # self.b[3] = self.init_b(shape=[128], name='b_3')
             conv_1_result = tf.nn.conv2d(
-                input=maxpool_result, filter=self.w[3], strides=[1, 1, 1, 1], padding='SAME', name='conv_1')
-            # normed_batch = self.batch_norm(x=conv_1_result, is_training=self.is_training, name='layer_2_conv_1')
+                input=normed_batch, filter=self.w[3], strides=[1, 1, 1, 1], padding='SAME', name='conv_1')
             relu_1_result = tf.nn.relu(features=conv_1_result, name='relu_1')
+
+            normed_batch = self.batch_norm(x=relu_1_result, is_training=self.is_training, name='layer2_BN2')
 
             # conv_2
             self.w[4] = self.init_w(shape=[3, 3, 128, 128], name='w_4')
             # self.b[4] = self.init_b(shape=[128], name='b_4')
             conv_2_result = tf.nn.conv2d(
-                input=relu_1_result, filter=self.w[4], strides=[1, 1, 1, 1], padding='SAME', name='conv_2')
-            # normed_batch = self.batch_norm(x=conv_2_result, is_training=self.is_training, name='layer_2_conv_2')
+                input=normed_batch, filter=self.w[4], strides=[1, 1, 1, 1], padding='SAME', name='conv_2')
             relu_2_result = tf.nn.relu(features=conv_2_result, name='relu_2')
             self.result_from_contracting[2] = relu_2_result  # saved for up sampling below
 
@@ -241,27 +225,23 @@ class UNet:
                 value=relu_2_result, ksize=[1, 2, 2, 1],
                 strides=[1, 2, 2, 1], padding='VALID', name='maxpool')
 
-            # dropout
-            # dropout_result = tf.nn.dropout(x=maxpool_result, keep_prob=self.keep_prob)
-
-            # print("layer 2 output shape", dropout_result.shape)
-
         # layer 3
         with tf.name_scope('layer_3'):
+            normed_batch = self.batch_norm(x=maxpool_result, is_training=self.is_training, name='layer3_BN1')
             # conv_1
             self.w[5] = self.init_w(shape=[3, 3, 128, 256], name='w_5')
             # self.b[5] = self.init_b(shape=[256], name='b_5')
             conv_1_result = tf.nn.conv2d(
-                input=maxpool_result, filter=self.w[5], strides=[1, 1, 1, 1], padding='SAME', name='conv_1')
-            # normed_batch = self.batch_norm(x=conv_1_result, is_training=self.is_training, name='layer_3_conv_1')
+                input=normed_batch, filter=self.w[5], strides=[1, 1, 1, 1], padding='SAME', name='conv_1')
             relu_1_result = tf.nn.relu(features=conv_1_result, name='relu_1')
+
+            normed_batch = self.batch_norm(x=relu_1_result, is_training=self.is_training, name='layer3_BN2')
 
             # conv_2
             self.w[6] = self.init_w(shape=[3, 3, 256, 256], name='w_6')
             # self.b[6] = self.init_b(shape=[256], name='b_6')
             conv_2_result = tf.nn.conv2d(
-                input=relu_1_result, filter=self.w[6], strides=[1, 1, 1, 1], padding='SAME', name='conv_2')
-            # normed_batch = self.batch_norm(x=conv_2_result, is_training=self.is_training, name='layer_3_conv_2')
+                input=normed_batch, filter=self.w[6], strides=[1, 1, 1, 1], padding='SAME', name='conv_2')
             relu_2_result = tf.nn.relu(features=conv_2_result, name='relu_2')
             self.result_from_contracting[3] = relu_2_result  # saved for up sampling below
 
@@ -270,27 +250,23 @@ class UNet:
                 value=relu_2_result, ksize=[1, 2, 2, 1],
                 strides=[1, 2, 2, 1], padding='VALID', name='maxpool')
 
-            # dropout
-            # dropout_result = tf.nn.dropout(x=maxpool_result, keep_prob=self.keep_prob)
-
-            # print("layer 3 output shape", dropout_result.shape)
-
         # layer 4
         with tf.name_scope('layer_4'):
+            normed_batch = self.batch_norm(x=maxpool_result, is_training=self.is_training, name='layer4_BN1')
             # conv_1
             self.w[7] = self.init_w(shape=[3, 3, 256, 512], name='w_7')
             # self.b[7] = self.init_b(shape=[512], name='b_7')
             conv_1_result = tf.nn.conv2d(
-                input=maxpool_result, filter=self.w[7], strides=[1, 1, 1, 1], padding='SAME', name='conv_1')
-            # normed_batch = self.batch_norm(x=conv_1_result, is_training=self.is_training, name='layer_4_conv_1')
+                input=normed_batch, filter=self.w[7], strides=[1, 1, 1, 1], padding='SAME', name='conv_1')
             relu_1_result = tf.nn.relu(features=conv_1_result, name='relu_1')
+
+            normed_batch = self.batch_norm(x=relu_1_result, is_training=self.is_training, name='layer4_BN2')
 
             # conv_2
             self.w[8] = self.init_w(shape=[3, 3, 512, 512], name='w_8')
             # self.b[8] = self.init_b(shape=[512], name='b_8')
             conv_2_result = tf.nn.conv2d(
-                input=relu_1_result, filter=self.w[8], strides=[1, 1, 1, 1], padding='SAME', name='conv_2')
-            # normed_batch = self.batch_norm(x=conv_2_result, is_training=self.is_training, name='layer_4_conv_2')
+                input=normed_batch, filter=self.w[8], strides=[1, 1, 1, 1], padding='SAME', name='conv_2')
             relu_2_result = tf.nn.relu(features=conv_2_result, name='relu_2')
             self.result_from_contracting[4] = relu_2_result  # saved for up sampling below
 
@@ -299,28 +275,24 @@ class UNet:
                 value=relu_2_result, ksize=[1, 2, 2, 1],
                 strides=[1, 2, 2, 1], padding='VALID', name='maxpool')
 
-            # dropout
-            # dropout_result = tf.nn.dropout(x=maxpool_result, keep_prob=self.keep_prob)
-
-            # print("layer 4 output shape", dropout_result.shape)
-
         # the bottom
         # layer 5
         with tf.name_scope('layer_5'):
+            normed_batch = self.batch_norm(x=maxpool_result, is_training=self.is_training, name='layer5_BN1')
             # conv_1
             self.w[9] = self.init_w(shape=[3, 3, 512, 1024], name='w_9')
             # self.b[9] = self.init_b(shape=[1024], name='b_9')
             conv_1_result = tf.nn.conv2d(
-                input=maxpool_result, filter=self.w[9], strides=[1, 1, 1, 1], padding='SAME', name='conv_1')
-            # normed_batch = self.batch_norm(x=conv_1_result, is_training=self.is_training, name='layer_5_conv_1')
+                input=normed_batch, filter=self.w[9], strides=[1, 1, 1, 1], padding='SAME', name='conv_1')
             relu_1_result = tf.nn.relu(features=conv_1_result, name='relu_1')
+
+            normed_batch = self.batch_norm(x=relu_1_result, is_training=self.is_training, name='layer5_BN2')
 
             # conv_2
             self.w[10] = self.init_w(shape=[3, 3, 1024, 1024], name='w_10')
             # self.b[10] = self.init_b(shape=[1024], name='b_10')
             conv_2_result = tf.nn.conv2d(
-                input=relu_1_result, filter=self.w[10], strides=[1, 1, 1, 1], padding='SAME', name='conv_2')
-            # normed_batch = self.batch_norm(x=conv_2_result, is_training=self.is_training, name='layer_5_conv_2')
+                input=normed_batch, filter=self.w[10], strides=[1, 1, 1, 1], padding='SAME', name='conv_2')
             relu_2_result = tf.nn.relu(features=conv_2_result, name='relu_2')
 
             # up_sampling
@@ -526,7 +498,6 @@ class UNet:
     def train(self):
         train_image_filename_queue = tf.train.string_input_producer(
             string_tensor=tf.train.match_filenames_once(TRAIN_SET_PATH), num_epochs=EPOCH_NUM, shuffle=True)
-        ckpt_path = os.path.join(SAVED_MODELS_DIR, "model.ckpt")
         train_images, train_labels = read_image_batch(train_image_filename_queue, TRAIN_BATCH_SIZE)
         tf.summary.scalar("loss", self.loss_mean)
         tf.summary.scalar('accuracy', self.accuracy)
@@ -578,7 +549,7 @@ class UNet:
             except tf.errors.OutOfRangeError:
                 print('❗️Done training -- epoch limit reached')
             finally:
-                all_parameters_saver.save(sess=sess, save_path=ckpt_path)
+                all_parameters_saver.save(sess=sess, save_path=CKPT_PATH)
                 coord.request_stop()
             coord.join(threads)
         print('❗️Done training. Total: num %d , loss: %.6f , accuracy: %.6f\n'
@@ -587,7 +558,6 @@ class UNet:
     def validate(self):
         validation_image_filename_queue = tf.train.string_input_producer(
             string_tensor=tf.train.match_filenames_once(VALIDATE_SET_PATH), num_epochs=1, shuffle=True)
-        ckpt_path = os.path.join(SAVED_MODELS_DIR, "model.ckpt")
         validation_images, validation_labels = read_image_batch(validation_image_filename_queue,
                                                                 VALIDATE_BATCH_SIZE)
         # tf.summary.scalar("loss", self.loss_mean)
@@ -600,7 +570,7 @@ class UNet:
             sess.run(tf.local_variables_initializer())
             # summary_writer = tf.summary.FileWriter(LOGS_DIR, sess.graph)
             # tf.summary.FileWriter(SAVED_MODELS_DIR, sess.graph)
-            all_parameters_saver.restore(sess=sess, save_path=ckpt_path)
+            all_parameters_saver.restore(sess=sess, save_path=CKPT_PATH)
             coord = tf.train.Coordinator()
             threads = tf.train.start_queue_runners(coord=coord)
             try:
@@ -633,7 +603,6 @@ class UNet:
         import cv2
         test_image_filename_queue = tf.train.string_input_producer(
             string_tensor=tf.train.match_filenames_once(TEST_SET_PATH), num_epochs=1, shuffle=True)
-        ckpt_path = os.path.join(SAVED_MODELS_DIR, "model.ckpt")
         test_images, test_labels = read_image_batch(test_image_filename_queue, TEST_BATCH_SIZE)
         # tf.summary.scalar("loss", self.loss_mean)
         # tf.summary.scalar('accuracy', self.accuracy)
@@ -645,7 +614,7 @@ class UNet:
             sess.run(tf.local_variables_initializer())
             # summary_writer = tf.summary.FileWriter(LOGS_DIR, sess.graph)
             # tf.summary.FileWriter(SAVED_MODELS_DIR, sess.graph)
-            all_parameters_saver.restore(sess=sess, save_path=ckpt_path)
+            all_parameters_saver.restore(sess=sess, save_path=CKPT_PATH)
             coord = tf.train.Coordinator()
             threads = tf.train.start_queue_runners(coord=coord)
             sum_acc = 0.0
@@ -676,7 +645,7 @@ class UNet:
             coord.join(threads)
         print('❗️Done testing. Average accuracy: %.6f\n' % (sum_acc / epoch))
 
-    def predict(self, ckpt_path=SAVED_MODELS_DIR + "/model.ckpt"):
+    def predict(self):
         from keras.preprocessing import image
         import numpy as np
         image_list = get_sorted_files(ORIGIN_PREDICT_DIRECTORY, "png")
@@ -689,7 +658,7 @@ class UNet:
             sess.run(tf.local_variables_initializer())
             # summary_writer = tf.summary.FileWriter(LOGS_DIR, sess.graph)
             # tf.summary.FileWriter(SAVED_MODELS_DIR, sess.graph)
-            all_parameters_saver.restore(sess=sess, save_path=ckpt_path)
+            all_parameters_saver.restore(sess=sess, save_path=CKPT_PATH)
             for index, image_path in enumerate(image_list):
                 original_img = image.load_img(image_path,
                                               target_size=(
@@ -752,14 +721,6 @@ if __name__ == '__main__':
     parser.add_argument(
         '--log_dir', type=str, default=LOGS_DIR,
         help='path of dir for saving tensorboard logs')
-    # input image shape
-    parser.add_argument(
-        '--input_shape', type=str, default=INPUT_SHAPE,
-        help='shape of the input image, channel last, a tuple like "(144,112,1)"')
-    # output image shape
-    parser.add_argument(
-        '--output_shape', type=str, default=OUTPUT_SHAPE,
-        help='shape of the output image, channel last, a tuple like "(144,112,3)"')
     # epoch num
     parser.add_argument(
         '--epoch_num', type=int, default=EPOCH_NUM,
@@ -802,16 +763,26 @@ if __name__ == '__main__':
         help='the name of dataset you want to use')
     FLAGS, _ = parser.parse_known_args()
 
-    if type(FLAGS.input_shape) == str:
-        (INPUT_IMG_HEIGHT, INPUT_IMG_WIDTH, INPUT_IMG_CHANNEL) = eval(FLAGS.input_shape)
-        INPUT_SHAPE = eval(FLAGS.input_shape)
-    if type(FLAGS.output_shape) == str:
-        (OUTPUT_IMG_HEIGHT, OUTPUT_IMG_WIDTH, OUTPUT_IMG_CHANNEL) = eval(FLAGS.ouput_shape)
-        OUTPUT_SHAPE = eval(FLAGS.output_shape)
+    DATASET_NAME = FLAGS.dataset_name
+    CKPT_PATH = SAVED_MODELS_DIR + "/unet_model_on_" + DATASET_NAME + ".ckpt"
+    if DATASET_NAME == "mri":
+        (INPUT_IMG_HEIGHT, INPUT_IMG_WIDTH, INPUT_IMG_CHANNEL) = (144, 112, 1)
+        INPUT_SHAPE = (144, 112, 1)
+        (OUTPUT_IMG_HEIGHT, OUTPUT_IMG_WIDTH, OUTPUT_IMG_CHANNEL) = (144, 112, 3)
+        OUTPUT_SHAPE = (144, 112, 3)
+    elif DATASET_NAME == "sorteo":
+        (INPUT_IMG_HEIGHT, INPUT_IMG_WIDTH, INPUT_IMG_CHANNEL) = (112, 112, 1)
+        INPUT_SHAPE = (112, 112, 1)
+        (OUTPUT_IMG_HEIGHT, OUTPUT_IMG_WIDTH, OUTPUT_IMG_CHANNEL) = (112, 112, 3)
+        OUTPUT_SHAPE = (112, 112, 3)
     EPOCH_NUM = FLAGS.epoch_num
     TRAIN_BATCH_SIZE = FLAGS.train_batch_size
     VALIDATE_BATCH_SIZE = FLAGS.validate_batch_size
     TEST_BATCH_SIZE = FLAGS.test_batch_size
+
+    TRAIN_SET_PATH = DATASET_DIR + "/" + DATASET_NAME + "_pad_4_results/tfrecords/train.tfrecords"
+    VALIDATE_SET_PATH = DATASET_DIR + "/" + DATASET_NAME + "_pad_4_results/tfrecords/validate.tfrecords"
+    TEST_SET_PATH = DATASET_DIR + "/" + DATASET_NAME + "_pad_4_results/tfrecords/test.tfrecords"
 
     if not os.path.exists(TEST_SAVED_DIRECTORY):
         os.system("mkdir " + TEST_SAVED_DIRECTORY)
