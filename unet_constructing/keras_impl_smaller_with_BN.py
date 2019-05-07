@@ -14,7 +14,7 @@ from module_minc_keras.minc_keras import *
 
 PROJECT_DIR = GlobalVar.PROJECT_PATH
 DATASET_DIR = GlobalVar.DATASET_PATH
-OUTPUT_DIR = GlobalVar.OUTPUT_PATH + "/keras_impl_smaller"
+OUTPUT_DIR = GlobalVar.OUTPUT_PATH + "/keras_impl_smaller_with_BN"
 LOGS_DIR = OUTPUT_DIR + "/logs"
 SAVED_MODELS_DIR = OUTPUT_DIR + "/saved_models"
 DATASET_NAME = "mri"
@@ -48,7 +48,7 @@ def main():
 
     # if you change the number of times you downsample with max_pool,
     # then you need to rerun prepare_data() with pad_base=<number of downsample nodes>
-    model_saving_path = SAVED_MODELS_DIR + "/unet_model_on_" + DATASET_NAME + ".hdf5"
+    model_saving_path = SAVED_MODELS_DIR + "/unet_model_on_" + DATASET_NAME + "_model.hdf5"
 
     # Define the architecture of neural network
     IN = Input(shape=(data_mri_pad_4['image_dim'][1], data_mri_pad_4['image_dim'][2], 1))
@@ -60,38 +60,48 @@ def main():
     # 32, 3, 3 are nb_filters, nb_row, nb_col. 3, 3 can also be write as kernel_size=3. strides default to (1,1).
     conv1 = Convolution2D(filters=32, kernel_size=3, activation='relu', border_mode='same')(BN1)
     # print("🚩️conv1 shape", conv1.shape)
-    conv1 = Convolution2D(32, 3, 3, activation='relu', border_mode='same')(conv1)
+    BN1 = BatchNormalization()(conv1)
+    conv1 = Convolution2D(32, 3, 3, activation='relu', border_mode='same')(BN1)
     # print("🚩️conv1 shape", conv1.shape)
-    pool1 = MaxPooling2D(pool_size=(2, 2), strides=None)(conv1)  # strides is None, it will default to pool_size
+    BN1 = BatchNormalization()(conv1)
+    pool1 = MaxPooling2D(pool_size=(2, 2), strides=None)(BN1)  # strides is None, it will default to pool_size
     # print("🚩pool1 shape", pool1.shape)
 
     conv2 = Convolution2D(64, 3, 3, activation='relu', border_mode='same')(pool1)
     # print("🚩️conv2 shape", conv2.shape)
-    conv2 = Convolution2D(64, 3, 3, activation='relu', border_mode='same')(conv2)
+    BN2 = BatchNormalization()(conv2)
+    conv2 = Convolution2D(64, 3, 3, activation='relu', border_mode='same')(BN2)
     # print("🚩️conv2 shape", conv2.shape)
-    pool2 = MaxPooling2D(pool_size=(2, 2))(conv2)
+    BN2 = BatchNormalization()(conv2)
+    pool2 = MaxPooling2D(pool_size=(2, 2))(BN2)
     # print("🚩pool2 shape", pool2.shape)
 
     conv3 = Convolution2D(128, 3, 3, activation='relu', border_mode='same')(pool2)
     # print("🚩conv3 shape", conv3.shape)
-    conv3 = Convolution2D(128, 3, 3, activation='relu', border_mode='same')(conv3)
+    BN3 = BatchNormalization()(conv3)
+    conv3 = Convolution2D(128, 3, 3, activation='relu', border_mode='same')(BN3)
     # print("🚩️conv3 shape", conv3.shape)
-    pool3 = MaxPooling2D(pool_size=(2, 2))(conv3)
+    BN3 = BatchNormalization()(conv3)
+    pool3 = MaxPooling2D(pool_size=(2, 2))(BN3)
     # print("🚩pool3 shape", pool3.shape)
 
     conv4 = Convolution2D(256, 3, 3, activation='relu', border_mode='same')(pool3)
     # print("🚩️conv4 shape", conv4.shape)
-    conv4 = Convolution2D(256, 3, 3, activation='relu', border_mode='same')(conv4)
+    BN4 = BatchNormalization()(conv4)
+    conv4 = Convolution2D(256, 3, 3, activation='relu', border_mode='same')(BN4)
     # print("🚩️conv4 shape", conv4.shape)
-    pool4 = MaxPooling2D(pool_size=(2, 2))(conv4)
+    BN4 = BatchNormalization()(conv4)
+    pool4 = MaxPooling2D(pool_size=(2, 2))(BN4)
     # print("🚩pool4 shape", pool4.shape)
 
     conv5 = Convolution2D(512, 3, 3, activation='relu', border_mode='same')(pool4)
     # print("🚩️conv5 shape", conv5.shape)
-    conv5 = Convolution2D(512, 3, 3, activation='relu', border_mode='same')(conv5)
+    BN5 = BatchNormalization()(conv5)
+    conv5 = Convolution2D(512, 3, 3, activation='relu', border_mode='same')(BN5)
     # print("🚩️conv5 shape", conv5.shape)
+    BN5 = BatchNormalization()(conv5)
 
-    up5 = UpSampling2D(size=(2, 2))(conv5)
+    up5 = UpSampling2D(size=(2, 2))(BN5)
     # print("🚩up5 shape", up5.shape)
     # up6 = Conv2DTranspose( filters=512, kernel_size=(3,3), strides=(2, 2), padding='same')(conv6)
     conc5 = Concatenate(axis=3)([up5, conv4])
@@ -146,7 +156,7 @@ def main():
     history = model.fit([X_train_mri_pad_4],
                         Y_train_mri_pad_4,
                         validation_data=([X_validate_mri_pad_4], Y_validate_mri_pad_4),
-                        epochs=EPOCH_NUM,
+                        epochs=3,
                         callbacks=[TensorBoard(log_dir=LOGS_DIR)])
     # save model
     model.save(model_saving_path)
@@ -157,7 +167,6 @@ def main():
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-
     # dataset name
     parser.add_argument(
         '--dataset_name', type=str, default=DATASET_NAME,
@@ -166,7 +175,6 @@ if __name__ == "__main__":
     parser.add_argument(
         '--epoch_num', type=int, default=EPOCH_NUM,
         help='epoch num')
-
     FLAGS, _ = parser.parse_known_args()
 
     DATASET_NAME = FLAGS.dataset_name
@@ -174,7 +182,6 @@ if __name__ == "__main__":
 
     if not os.path.exists(SAVED_MODELS_DIR):
         os.makedirs(SAVED_MODELS_DIR)
-
     main()
 
 # shape of each layer
