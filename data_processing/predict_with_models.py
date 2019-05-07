@@ -8,7 +8,7 @@ from keras.preprocessing import image
 
 from config_and_utils import GlobalVar, get_sorted_files
 from module_minc_keras.utils import normalize
-from unet_constructing.tf_impl_smaller import UNet
+from unet_constructing.tf_impl_original import UNet
 
 PROJECT_PATH = GlobalVar.PROJECT_PATH
 DATASET_PATH = GlobalVar.DATASET_PATH
