@@ -75,7 +75,7 @@ def read_image_batch(file_queue, batch_size):
         tensors=[img, label], batch_size=batch_size,
         capacity=capacity, min_after_dequeue=min_after_dequeue)
     # one_hot_labels = tf.reshape(label_batch, [batch_size, OUTPUT_IMG_HEIGHT, OUTPUT_IMG_WIDTH])
-    print("image_batch shape", image_batch.get_shape(), "label_batch shape", label_batch.get_shape())
+    # print("image_batch shape", image_batch.get_shape(), "label_batch shape", label_batch.get_shape())
     return image_batch, label_batch
 
 
@@ -674,7 +674,7 @@ class UNet:
             finally:
                 coord.request_stop()
             coord.join(threads)
-        print('❗️Done testing. Average accuracy: %.6f%%\n' % (sum_acc / epoch))
+        print('❗️Done testing. Average accuracy: %.6f\n' % (sum_acc / epoch))
 
     def predict(self, ckpt_path=SAVED_MODELS_DIR + "/model.ckpt"):
         from keras.preprocessing import image
@@ -796,7 +796,10 @@ if __name__ == '__main__':
     parser.add_argument(
         '--to_predict', type=str, default="yes",
         help='whether to predict, yes/no')
-
+    # dataset name
+    parser.add_argument(
+        '--dataset_name', type=str, default="mri",
+        help='the name of dataset you want to use')
     FLAGS, _ = parser.parse_known_args()
 
     if type(FLAGS.input_shape) == str:
@@ -817,6 +820,6 @@ if __name__ == '__main__':
 
     if not os.path.exists(TRAIN_SET_PATH):
         print("❗️.tfrecords files used to train do not exist, generating now...")
-        convert_npy_to_tfrecords.main()
+        convert_npy_to_tfrecords.convert_whole_dataset(FLAGS.dataset_name)
 
     main()

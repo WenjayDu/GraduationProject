@@ -8,7 +8,7 @@ from keras.preprocessing import image
 
 from config_and_utils import GlobalVar, get_sorted_files
 from module_minc_keras.utils import normalize
-from unet_constructing.construct_unet_with_tf import UNet
+from unet_constructing.tf_impl_smaller import UNet
 
 PROJECT_PATH = GlobalVar.PROJECT_PATH
 DATASET_PATH = GlobalVar.DATASET_PATH
@@ -17,13 +17,13 @@ IMG_SIZE = (144, 112, 3)
 IMG_PATH = DATASET_PATH + "/examples/extracted_images/sub-00031_task-01_ses-01_T1w_anat_rsl/53.png"
 LABEL_PATH = DATASET_PATH + "/examples/extracted_images/sub-00031_task-01_ses-01_T1w_variant-seg_rsl/53.png"
 
-MODEL_PATH = PROJECT_PATH + "/unet_at_mri/trained_models/keras_implementation/model_of_unet_at_mri.hdf5"
-KERAS_PREDICTION_SAVED_DIR = OUTPUT_PATH + "/keras_model"
+MODEL_PATH = OUTPUT_PATH + "/keras_implementation/model.hdf5"
+KERAS_PREDICTION_SAVED_DIR = OUTPUT_PATH + "/prediction_of_keras_model"
 
 # for model implemented with tf
-CHECKPOINT_PATH = PROJECT_PATH + "/unet_at_mri/trained_models/tf_implementation/model.ckpt"
+CHECKPOINT_PATH = OUTPUT_PATH + "/tf_implementation/model.ckpt"
 PREDICT_IMG_DIR = DATASET_PATH + "/examples/extracted_images/sub-00031_task-01_ses-01_T1w_anat_rsl"
-TF_PREDICTION_SAVED_DIR = OUTPUT_PATH + "/tf_model"
+TF_PREDICTION_SAVED_DIR = OUTPUT_PATH + "/prediction_of_tf_model"
 PREDICT_BATCH_SIZE = 1
 
 

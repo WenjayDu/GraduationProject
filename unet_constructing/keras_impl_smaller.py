@@ -9,25 +9,27 @@ sys.path.append(rootPath)
 
 import pickle
 from config_and_utils import GlobalVar
-from data_processing.prepare_datasets import prepare_mri_dataset
+from data_processing.prepare_datasets import prepare_dataset
 from module_minc_keras.minc_keras import *
 
 PROJECT_DIR = GlobalVar.PROJECT_PATH
 DATASET_DIR = GlobalVar.DATASET_PATH
-OUTPUT_DIR = GlobalVar.OUTPUT_PATH + "/keras_implementation"
-SERIALIZE_FILE = GlobalVar.DATASET_PATH + "/mri_pad_4_results/prepare_mri_dataset_return"
-
+OUTPUT_DIR = GlobalVar.OUTPUT_PATH + "/keras_impl_smaller"
 LOGS_DIR = OUTPUT_DIR + "/logs"
 SAVED_MODELS_DIR = OUTPUT_DIR + "/saved_models"
+DATASET_NAME = "mri"
+EPOCH_NUM = 3
 
 
 def main():
-    if os.path.exists(SERIALIZE_FILE):
-        with open(SERIALIZE_FILE, "rb") as f:
-            print("🚩Done deserializing file:", SERIALIZE_FILE)
+    print("🚩Using", DATASET_NAME, "dataset to train", EPOCH_NUM, "epoches")
+    serialized_file = GlobalVar.DATASET_PATH + "/" + DATASET_NAME + "_pad_4_results/serialized_dataset_object"
+    if os.path.exists(serialized_file):
+        with open(serialized_file, "rb") as f:
+            print("🚩Done deserializing file:", serialized_file)
             [images_mri_pad_4, data_mri_pad_4] = pickle.load(f)
     else:
-        [images_mri_pad_4, data_mri_pad_4] = prepare_mri_dataset()
+        [images_mri_pad_4, data_mri_pad_4] = prepare_dataset(dataset_name=DATASET_NAME)
 
     # Load data
     Y_validate_mri_pad_4 = np.load(data_mri_pad_4["validate_y_fn"] + '.npy')
@@ -46,7 +48,7 @@ def main():
 
     # if you change the number of times you downsample with max_pool,
     # then you need to rerun prepare_data() with pad_base=<number of downsample nodes>
-    model_saving_path = SAVED_MODELS_DIR + "/model_of_unet_at_mri.hdf5"
+    model_saving_path = SAVED_MODELS_DIR + "/unet_model.hdf5"
 
     # Define the architecture of neural network
     IN = Input(shape=(data_mri_pad_4['image_dim'][1], data_mri_pad_4['image_dim'][2], 1))
@@ -144,7 +146,7 @@ def main():
     history = model.fit([X_train_mri_pad_4],
                         Y_train_mri_pad_4,
                         validation_data=([X_validate_mri_pad_4], Y_validate_mri_pad_4),
-                        epochs=3,
+                        epochs=EPOCH_NUM,
                         callbacks=[TensorBoard(log_dir=LOGS_DIR)])
     # save model
     model.save(model_saving_path)
@@ -153,10 +155,26 @@ def main():
     print("🚩Test :", test_score)
 
 
-
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+
+    # dataset name
+    parser.add_argument(
+        '--dataset_name', type=str, default=DATASET_NAME,
+        help='name of dataset you want to use')
+    # epoch num
+    parser.add_argument(
+        '--epoch_num', type=int, default=EPOCH_NUM,
+        help='epoch num')
+
+    FLAGS, _ = parser.parse_known_args()
+
+    DATASET_NAME = FLAGS.dataset_name
+    EPOCH_NUM = FLAGS.epoch_num
+
     if not os.path.exists(SAVED_MODELS_DIR):
         os.makedirs(SAVED_MODELS_DIR)
+
     main()
 
 # shape of each layer
