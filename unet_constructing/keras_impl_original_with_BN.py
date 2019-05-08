@@ -14,7 +14,7 @@ from module_minc_keras.minc_keras import *
 
 PROJECT_DIR = GlobalVar.PROJECT_PATH
 DATASET_DIR = GlobalVar.DATASET_PATH
-OUTPUT_DIR = GlobalVar.OUTPUT_PATH + "/keras_impl_original_with_BN"
+OUTPUT_DIR = GlobalVar.OUTPUT_PATH + "/keras_impl_original_with_BN_2"
 LOGS_DIR = OUTPUT_DIR + "/logs"
 SAVED_MODELS_DIR = OUTPUT_DIR + "/saved_models"
 DATASET_NAME = "mri"
@@ -42,6 +42,7 @@ def main():
     X_test_mri_pad_4 = np.load(data_mri_pad_4["test_x_fn"] + '.npy')
     Y_test_mri_pad_4 = np.load(data_mri_pad_4["test_y_fn"] + '.npy')
 
+    print("Y_test_mri_pad_4 shape", Y_test_mri_pad_4.shape)
     Y_test_mri_pad_4 = to_categorical(Y_test_mri_pad_4)
     Y_train_mri_pad_4 = to_categorical(Y_train_mri_pad_4, num_classes=nlabels_mri_pad_4)
     Y_validate_mri_pad_4 = to_categorical(Y_validate_mri_pad_4, num_classes=nlabels_mri_pad_4)
@@ -54,54 +55,52 @@ def main():
     IN = Input(shape=(data_mri_pad_4['image_dim'][1], data_mri_pad_4['image_dim'][2], 1))
     # print("🚩IN shape", IN.shape)
 
-    BN0 = BatchNormalization()(IN)
+    BN1 = BatchNormalization()(IN)
     # print("🚩BN1 shape", BN1.shape)
-
     # 32, 3, 3 are nb_filters, nb_row, nb_col. 3, 3 can also be write as kernel_size=3. strides default to (1,1).
-    conv1 = Convolution2D(filters=64, kernel_size=3, activation='relu', border_mode='same')(BN0)
+    conv1 = Convolution2D(filters=64, kernel_size=3, activation='relu', border_mode='same')(BN1)
     # print("🚩️conv1 shape", conv1.shape)
     BN1 = BatchNormalization()(conv1)
     conv1 = Convolution2D(64, 3, 3, activation='relu', border_mode='same')(BN1)
     # print("🚩️conv1 shape", conv1.shape)
-    BN1 = BatchNormalization()(conv1)
-    pool1 = MaxPooling2D(pool_size=(2, 2), strides=None)(BN1)  # strides is None, it will default to pool_size
+    pool1 = MaxPooling2D(pool_size=(2, 2), strides=None)(conv1)  # strides is None, it will default to pool_size
     # print("🚩pool1 shape", pool1.shape)
 
-    conv2 = Convolution2D(128, 3, 3, activation='relu', border_mode='same')(pool1)
+    BN2 = BatchNormalization()(pool1)
+    conv2 = Convolution2D(128, 3, 3, activation='relu', border_mode='same')(BN2)
     # print("🚩️conv2 shape", conv2.shape)
     BN2 = BatchNormalization()(conv2)
     conv2 = Convolution2D(128, 3, 3, activation='relu', border_mode='same')(BN2)
     # print("🚩️conv2 shape", conv2.shape)
-    BN2 = BatchNormalization()(conv2)
-    pool2 = MaxPooling2D(pool_size=(2, 2))(BN2)
+    pool2 = MaxPooling2D(pool_size=(2, 2))(conv2)
     # print("🚩pool2 shape", pool2.shape)
 
-    conv3 = Convolution2D(256, 3, 3, activation='relu', border_mode='same')(pool2)
+    BN3 = BatchNormalization()(pool2)
+    conv3 = Convolution2D(256, 3, 3, activation='relu', border_mode='same')(BN3)
     # print("🚩conv3 shape", conv3.shape)
     BN3 = BatchNormalization()(conv3)
     conv3 = Convolution2D(256, 3, 3, activation='relu', border_mode='same')(BN3)
     # print("🚩️conv3 shape", conv3.shape)
-    BN3 = BatchNormalization()(conv3)
-    pool3 = MaxPooling2D(pool_size=(2, 2))(BN3)
+    pool3 = MaxPooling2D(pool_size=(2, 2))(conv3)
     # print("🚩pool3 shape", pool3.shape)
 
-    conv4 = Convolution2D(512, 3, 3, activation='relu', border_mode='same')(pool3)
+    BN4 = BatchNormalization()(pool3)
+    conv4 = Convolution2D(512, 3, 3, activation='relu', border_mode='same')(BN4)
     # print("🚩️conv4 shape", conv4.shape)
     BN4 = BatchNormalization()(conv4)
     conv4 = Convolution2D(512, 3, 3, activation='relu', border_mode='same')(BN4)
     # print("🚩️conv4 shape", conv4.shape)
-    BN4 = BatchNormalization()(conv4)
-    pool4 = MaxPooling2D(pool_size=(2, 2))(BN4)
+    pool4 = MaxPooling2D(pool_size=(2, 2))(conv4)
     # print("🚩pool4 shape", pool4.shape)
 
-    conv5 = Convolution2D(1024, 3, 3, activation='relu', border_mode='same')(pool4)
+    BN5 = BatchNormalization()(pool4)
+    conv5 = Convolution2D(1024, 3, 3, activation='relu', border_mode='same')(BN5)
     # print("🚩️conv5 shape", conv5.shape)
     BN5 = BatchNormalization()(conv5)
     conv5 = Convolution2D(1024, 3, 3, activation='relu', border_mode='same')(BN5)
     # print("🚩️conv5 shape", conv5.shape)
-    BN5 = BatchNormalization()(conv5)
 
-    up5 = UpSampling2D(size=(2, 2))(BN5)
+    up5 = UpSampling2D(size=(2, 2))(conv5)
     # print("🚩up5 shape", up5.shape)
     # up6 = Conv2DTranspose( filters=512, kernel_size=(3,3), strides=(2, 2), padding='same')(conv6)
     conc5 = Concatenate(axis=3)([up5, conv4])

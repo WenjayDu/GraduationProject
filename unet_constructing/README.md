@@ -15,8 +15,6 @@ With `smaller` in name has half of filters in each layer, compared with the `ori
 
 With `with_BN` in name is the same with the architecture proposed in the paper<sup>[[2]](#r2)</sup>, with Batch Normalization in the contracting path of U-Net.
 
-With `with_BN_2` in name is modified based on `with_BN` by myself.
-
 ## References
 1.<span id="r1"> Olaf Ronneberger, Philipp Fischer, Thomas Brox: *U-Net: Convolutional Networks for Biomedical Image Segmentation.* In 2015.</span>
 
