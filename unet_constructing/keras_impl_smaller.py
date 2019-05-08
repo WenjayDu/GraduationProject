@@ -22,7 +22,7 @@ EPOCH_NUM = 3
 
 
 def main():
-    print("🚩Using", DATASET_NAME, "dataset to train", EPOCH_NUM, "epoches")
+    print("🚩Use", DATASET_NAME, "dataset to train", EPOCH_NUM, "epoches")
     serialized_file = GlobalVar.DATASET_PATH + "/" + DATASET_NAME + "_pad_4_results/serialized_dataset_object"
     if os.path.exists(serialized_file):
         with open(serialized_file, "rb") as f:

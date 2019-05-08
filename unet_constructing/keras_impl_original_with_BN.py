@@ -22,7 +22,7 @@ EPOCH_NUM = 3
 
 
 def main():
-    print("🚩Using", DATASET_NAME, "dataset to train", EPOCH_NUM, "epoches")
+    print("🚩Use", DATASET_NAME, "dataset to train", EPOCH_NUM, "epoches")
     serialized_file = GlobalVar.DATASET_PATH + "/" + DATASET_NAME + "_pad_4_results/serialized_dataset_object"
     if os.path.exists(serialized_file):
         with open(serialized_file, "rb") as f:
@@ -48,7 +48,7 @@ def main():
 
     # if you change the number of times you downsample with max_pool,
     # then you need to rerun prepare_data() with pad_base=<number of downsample nodes>
-    model_saving_path = SAVED_MODELS_DIR + "/unet_model_on_" + DATASET_NAME + "_model.hdf5"
+    model_saving_path = SAVED_MODELS_DIR + "/unet_model_on_" + DATASET_NAME + ".hdf5"
 
     # Define the architecture of neural network
     IN = Input(shape=(data_mri_pad_4['image_dim'][1], data_mri_pad_4['image_dim'][2], 1))
