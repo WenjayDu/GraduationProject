@@ -2,8 +2,8 @@ import tensorflow as tf
 from nets.abstract_model_helper import AbstractModelHelper
 from utils.multi_gpu_wrapper import MultiGpuWrapper as mgw
 from utils.lrn_rate_utils import setup_lrn_rate_piecewise_constant
-from model_compressing.mri_dataset_for_pf import MriDataset
-from model_compressing.config import GlobalPath, cal_np_unique_num
+from compressing_with_PF.mri_dataset import MriDataset
+from compressing_with_PF.config import GlobalPath, cal_np_unique_num
 
 FLAGS = tf.app.flags.FLAGS
 
@@ -37,12 +37,12 @@ class ModelHelper(AbstractModelHelper):
 
     def build_dataset_train(self, enbl_trn_val_split=False):
         """Build the data subset for training, usually with data augmentation."""
-        print("❗️init training dataset")
+        print("🚩️Initializing training dataset")
         return self.dataset_train.build(enbl_trn_val_split)
 
     def build_dataset_eval(self):
         """Build the data subset for evaluation, usually without data augmentation."""
-        print("❗️init evaluating dataset")
+        print("🚩️Initializing evaluation dataset")
         return self.dataset_eval.build()
 
     def forward_train(self, inputs):
@@ -89,7 +89,7 @@ class ModelHelper(AbstractModelHelper):
     def model_name(self):
         """Model's name."""
 
-        return 'convnet'
+        return 'U-Net'
 
     @property
     def dataset_name(self):

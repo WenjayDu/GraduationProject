@@ -1,7 +1,7 @@
 import numpy as np
 import tensorflow as tf
 from datasets.abstract_dataset import AbstractDataset
-from model_compressing.config import GlobalPath, cal_np_unique_num
+from compressing_with_PF.config import GlobalPath, cal_np_unique_num
 
 DATASET_PATH = GlobalPath.DATASET_PATH
 
@@ -90,7 +90,6 @@ class MriDataset(AbstractDataset):
         print("🚩done setting prefetch️")
         iterator = dataset.make_one_shot_iterator()
         print("🚩done making iterator")
-
         return iterator
 
 

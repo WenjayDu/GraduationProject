@@ -1,10 +1,10 @@
 import traceback
 import tensorflow as tf
 from learners.learner_utils import create_learner
-from model_compressing.unet_at_mri_for_pf import ModelHelper
-from model_compressing.config import GlobalPath
+from compressing_with_PF.unet_on_mri import ModelHelper
+from compressing_with_PF.config import GlobalPath
 
-OUTPUT_DIR = GlobalPath.OUTPUT_PATH + "/tf_model_compressing"
+OUTPUT_DIR = GlobalPath.OUTPUT_PATH + "/compressing_with_PF"
 LOGS_DIR = OUTPUT_DIR + "/logs"
 SAVED_MODELS_DIR = OUTPUT_DIR + "/saved_models"
 
@@ -49,7 +49,7 @@ def main(unused_arg):
             print("🚩done downloading, start evaluating...")
             learner.evaluate()
         else:
-            raise ValueError('unrecognized execution mode: ' + FLAGS.exec_mode)
+            raise ValueError('❗️Error: unrecognized execution mode: ' + FLAGS.exec_mode)
 
         # exit normally
         return 0
