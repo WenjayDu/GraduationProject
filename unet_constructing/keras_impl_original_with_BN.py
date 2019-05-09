@@ -14,7 +14,7 @@ from module_minc_keras.minc_keras import *
 
 PROJECT_DIR = GlobalVar.PROJECT_PATH
 DATASET_DIR = GlobalVar.DATASET_PATH
-OUTPUT_DIR = GlobalVar.OUTPUT_PATH + "/keras_impl_original_with_BN_2"
+OUTPUT_DIR = GlobalVar.OUTPUT_PATH + "/keras_impl_original_with_BN"
 LOGS_DIR = OUTPUT_DIR + "/logs"
 SAVED_MODELS_DIR = OUTPUT_DIR + "/saved_models"
 DATASET_NAME = "mri"
