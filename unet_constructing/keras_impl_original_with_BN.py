@@ -155,7 +155,7 @@ def main():
     history = model.fit([X_train_mri_pad_4],
                         Y_train_mri_pad_4,
                         validation_data=([X_validate_mri_pad_4], Y_validate_mri_pad_4),
-                        epochs=10,
+                        epochs=EPOCH_NUM,
                         callbacks=[TensorBoard(log_dir=LOGS_DIR)])
     # save model
     model.save(model_saving_path)
