@@ -62,6 +62,7 @@ def print_gpu_status():
         import psutil
         import humanize
         import GPUtil as GPU
+        import time
     except Exception as e:
         print("❌import error, please make sure that gputil, psutil, humanize modules are installed")
         sys.exit(1)
@@ -69,9 +70,11 @@ def print_gpu_status():
     GPUs = GPU.getGPUs()
     gpu = GPUs[0]  # there is only one gpu on colab, this may be not guaranteed
     process = psutil.Process(os.getpid())
-    print("\nGen RAM Free: " + humanize.naturalsize(psutil.virtual_memory().available),
+    print(time.asctime())
+    print("SYS RAM Free: " + humanize.naturalsize(psutil.virtual_memory().available),
+          " | Total:" + humanize.naturalsize(psutil.virtual_memory().total),
           " | Proc size: " + humanize.naturalsize(process.memory_info().rss))
-    print("GPU RAM Free: {0:.0f}MB | Used: {1:.0f}MB | Util {2:3.0f}% | Total {3:.0f}MB\n".format(gpu.memoryFree,
-                                                                                                  gpu.memoryUsed,
-                                                                                                  gpu.memoryUtil * 100,
-                                                                                                  gpu.memoryTotal))
+    print("GPU RAM Free: {0:.0f}MB | Used: {1:.0f}MB | Util {2:3.0f}% | Total {3:.0f}MB\n\n".format(gpu.memoryFree,
+                                                                                                    gpu.memoryUsed,
+                                                                                                    gpu.memoryUtil * 100,
+                                                                                                    gpu.memoryTotal))
