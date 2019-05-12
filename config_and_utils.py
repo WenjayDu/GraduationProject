@@ -3,7 +3,7 @@ import glob
 import numpy as np
 import logging
 
-logging.basicConfig(level=logging.INFO, format='%(levelname)s - %(asctime)s: %(message)s')
+logging.basicConfig(level=logging.INFO, format='%(levelname)s %(asctime)s: %(message)s', datefmt="%Y-%M-%d %H:%M:%S")
 
 
 # Global variables
