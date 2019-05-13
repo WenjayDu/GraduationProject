@@ -12,7 +12,7 @@ from unet_constructing.tf_impl.utils import *
 from unet_constructing.tf_impl import (original, original_with_BN, smaller, smaller_with_BN)
 
 FLAGS = tf.flags.FLAGS
-tf.flags.DEFINE_string(name='dataset_path', default=GlobalVar.DATASET_PATH + "/mri_pad_4",
+tf.flags.DEFINE_string(name='dataset_dir_path', default=GlobalVar.DATASET_PATH + "/mri_pad_4",
                        help='path of the dataset dir you want to use')
 tf.flags.DEFINE_string(name='structure', default="original",
                        help="structure of U-Net you want to use, like original, smaller")
@@ -29,7 +29,7 @@ tf.flags.DEFINE_string('to_predict', default="yes", help='whether to predict, ye
 tf.flags.DEFINE_list('input_shape', default=[144, 112, 1], help='shape of input data')
 tf.flags.DEFINE_list('output_shape', default=[144, 112, 3], help='shape of input data')
 
-ROOT_OUTPUT_DIR = FLAGS.dataset_path + '/models/tf_impl/'
+ROOT_OUTPUT_DIR = FLAGS.dataset_dir_path + '/models/tf_impl/'
 REAL_OUTPUT_DIR = ROOT_OUTPUT_DIR + '/' + FLAGS.structure
 
 LOG_DIR = REAL_OUTPUT_DIR + "/logs"
@@ -52,40 +52,40 @@ TRAIN_BATCH_SIZE = FLAGS.train_batch_size
 VALIDATION_BATCH_SIZE = FLAGS.validation_batch_size
 TEST_BATCH_SIZE = FLAGS.test_batch_size
 
-TRAIN_SET_PATH = FLAGS.dataset_path + "/tfrecords/train.tfrecords"
-VALIDATE_SET_PATH = FLAGS.dataset_path + "/tfrecords/validate.tfrecords"
-TEST_SET_PATH = FLAGS.dataset_path + "/tfrecords/test.tfrecords"
+TRAIN_SET_PATH = FLAGS.dataset_dir_path + "/tfrecords/train.tfrecords"
+VALIDATE_SET_PATH = FLAGS.dataset_dir_path + "/tfrecords/validate.tfrecords"
+TEST_SET_PATH = FLAGS.dataset_dir_path + "/tfrecords/test.tfrecords"
 
 
 def main():
     unet = choose_unet(structure_name=FLAGS.structure)
     if FLAGS.to_train == "yes":
         unet.build_up_unet(batch_size=FLAGS.train_batch_size)
-        print("🚩️start training...")
+        logging.info("🚩️start training...")
         train(unet)
     if FLAGS.to_validate == "yes":
         tf.reset_default_graph()
         unet.build_up_unet(batch_size=FLAGS.validation_batch_size)
-        print("🚩start validating...")
+        logging.info("🚩️start validating...")
         validate(unet)
     if FLAGS.to_test == "yes":
         tf.reset_default_graph()
         unet.build_up_unet(batch_size=FLAGS.test_batch_size)
-        print("🚩️start testing...")
+        logging.info("🚩️start testing...")
         test(unet)
     if FLAGS.to_predict == "yes":
         tf.reset_default_graph()
-        unet.build_up_unet(batch_size=FLAGS.prediction_batch_size)
-        print("🚩️start predicting...")
+        unet.build_up_unet(batch_size=1)
+        logging.info("🚩️start predicting...")
         predict(unet)
 
 
 def choose_unet(structure_name=FLAGS.structure):
     switcher = {
         "original": original.UNet(),
-        "original_with_BN": original_with_BN.UNet,
-        "smaller": smaller.UNet,
-        "smaller_with_BN": smaller_with_BN
+        "original_with_BN": original_with_BN.UNet(),
+        "smaller": smaller.UNet(),
+        "smaller_with_BN": smaller_with_BN.UNet()
     }
     return switcher.get(structure_name)
 
@@ -111,16 +111,7 @@ def train(unet):
             while not coord.should_stop():
                 # run training
                 example, label = sess.run([train_images, train_labels])  # get image and label，type is numpy.ndarry
-                # print("train example shape", example.shape, "label shape", label.shape)
                 label = label.reshape(TRAIN_BATCH_SIZE, INPUT_IMG_HEIGHT, INPUT_IMG_WIDTH)
-                # print("label shape", label.shape)
-
-                # example = example.reshape(144, 112, 1)
-                # from keras_preprocessing import image
-                # img = image.array_to_img(example)
-                # print("example shape",example.shape)
-                # img.show()
-                # image.save_img(PROJECT_DIR + "/backup/" + str(epoch) + ".png", img)
 
                 lo, acc, summary_str = sess.run(
                     [unet.loss_mean, unet.accuracy, merged_summary],
@@ -132,16 +123,14 @@ def train(unet):
                         unet.is_training: True}
                 )
                 summary_writer.add_summary(summary_str, epoch)
-                sess.run([unet.train_step],
-                         feed_dict={
-                             unet.input_image: example, unet.input_label: label, unet.keep_prob: 1.0,
-                             unet.lamb: 0.004, unet.is_training: True}
+                sess.run([unet.train_step], feed_dict={unet.input_image: example, unet.input_label: label,
+                                                       unet.keep_prob: 1.0, unet.lamb: 0.004, unet.is_training: True}
                          )
                 epoch += 1
                 if epoch % divisor == 0:
                     print('num %d , loss: %.6f , accuracy: %.6f' % (epoch * TRAIN_BATCH_SIZE, lo, acc))
         except tf.errors.OutOfRangeError:
-            print('❗️Done training -- epoch limit reached')
+            logging.info('❗️Done training -- epoch limit reached')
         finally:
             all_parameters_saver.save(sess=sess, save_path=CKPT_PATH)
             coord.request_stop()
@@ -290,8 +279,8 @@ if __name__ == '__main__':
     if not os.path.exists(PREDICTION_SAVE_DIR):
         os.system("mkdir -p " + PREDICTION_SAVE_DIR)
 
-    if not os.path.exists(FLAGS.dataset_path + "/tfrecords/train.tfrecords"):
+    if not os.path.exists(FLAGS.dataset_dir_path + "/tfrecords/train.tfrecords"):
         logging.warning("❗️.tfrecords files used to train do not exist, generating now...")
-        convert_npy_to_tfrecords.convert_whole_dataset(FLAGS.dataset_name)
+        convert_npy_to_tfrecords.convert_whole_dataset(FLAGS.dataset_dir_path)
 
     main()
