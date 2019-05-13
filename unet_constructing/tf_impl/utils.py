@@ -1,12 +1,129 @@
+import os
+import sys
+import matplotlib.pyplot as plt
 import numpy as np
 import tensorflow as tf
+from keras.preprocessing import image
+
+curPath = os.path.abspath(os.path.dirname(__file__))
+rootPath = os.path.split(curPath)[0]
+sys.path.append(rootPath)
+
+from module_minc_keras.utils import normalize
+from config_and_utils import GlobalVar, logging, get_sorted_files
 
 FLAGS = tf.flags.FLAGS
+tf.flags.DEFINE_string(name='dataset_dir_path', default=GlobalVar.DATASET_PATH + "/mri_pad_4",
+                       help='path of the dataset dir you want to use')
+tf.flags.DEFINE_string(name='structure', default="original",
+                       help="structure of U-Net you want to use, like original, smaller")
+tf.flags.DEFINE_integer(name='epoch_num', default=3, help='epoch num')
+
+tf.flags.DEFINE_integer('train_batch_size', default=8, help='train batch size')
+tf.flags.DEFINE_integer('validation_batch_size', default=8, help='validation batch size')
+tf.flags.DEFINE_integer('test_batch_size', default=8, help='test batch size')
+
+tf.flags.DEFINE_string('to_train', default="yes", help='whether to train, yes/no')
+tf.flags.DEFINE_string('to_validate', default="yes", help='whether to validate, yes/on')
+tf.flags.DEFINE_string('to_test', default="yes", help='whether to test, yes/no')
+tf.flags.DEFINE_string('to_predict', default="yes", help='whether to predict, yes/no')
+tf.flags.DEFINE_list('input_shape', default=[144, 112, 1], help='shape of input data')
+tf.flags.DEFINE_list('output_shape', default=[144, 112, 3], help='shape of input data')
+
+ROOT_OUTPUT_DIR = FLAGS.dataset_dir_path + '/models/tf_impl/'
+REAL_OUTPUT_DIR = ROOT_OUTPUT_DIR + '/' + FLAGS.structure
+
+LOG_DIR = REAL_OUTPUT_DIR + "/logs"
+MODEL_SAVE_DIR = REAL_OUTPUT_DIR + "/saved_model"
+CKPT_PATH = MODEL_SAVE_DIR + "/unet_model.ckpt"
+
+DATASET_DIR = GlobalVar.DATASET_PATH
+
+# the path of dir stroing imgs for predicting operation
+ORIGINAL_IMG_DIR = DATASET_DIR + "/examples/extracted_images/sub-00031_task-01_ses-01_T1w_anat_rsl"
+
+# the path of dir for saving imgs output from predicting operation
+PREDICTION_SAVE_DIR = REAL_OUTPUT_DIR + "/predictions"
+TEST_SAVE_DIR = REAL_OUTPUT_DIR + "/test_saved"
+
+[INPUT_IMG_HEIGHT, INPUT_IMG_WIDTH, INPUT_IMG_CHANNEL] = FLAGS.input_shape
+[OUTPUT_IMG_HEIGHT, OUTPUT_IMG_WIDTH, OUTPUT_IMG_CHANNEL] = FLAGS.output_shape
+
+TRAIN_BATCH_SIZE = FLAGS.train_batch_size
+VALIDATION_BATCH_SIZE = FLAGS.validation_batch_size
+TEST_BATCH_SIZE = FLAGS.test_batch_size
+
+TRAIN_SET_PATH = FLAGS.dataset_dir_path + "/tfrecords/train.tfrecords"
+VALIDATE_SET_PATH = FLAGS.dataset_dir_path + "/tfrecords/validate.tfrecords"
+TEST_SET_PATH = FLAGS.dataset_dir_path + "/tfrecords/test.tfrecords"
 
 # EPS below is the value added to denominator in BN operation,
 # to prevent the 0 operation when dividing by the variance,
 # may be different in different frameworks.
 EPS = 10e-5
+
+
+def to_hot_cmap(img, save_path=None):
+    """
+    convert an img to a hot colormap
+    :param img: path of an img or a dir containing png images to be converted or an numpy array
+    :param save_path: save path
+    :param argmax_axis:
+    :return:
+    """
+    if type(img) == str:
+        if os.path.isfile(img):
+            img = image.load_img(img, color_mode="grayscale")
+            img = image.img_to_array(img)
+        elif os.path.isdir(img):
+            print("🚩Converting all .png files in", img)
+            image_list = get_sorted_files(img, "png")
+            example = image.load_img(image_list[0])
+            example = image.img_to_array(example)
+            fig = plt.figure(frameon=False,
+                             figsize=(example.shape[1] / 500, example.shape[0] / 500),  # figsize(width, height)
+                             dpi=500)
+            ax = plt.Axes(fig, [0., 0., 1., 1.])
+            ax.set_axis_off()
+            fig.add_axes(ax)
+            if not os.path.exists(img + "/to_hot_cmap"):
+                os.makedirs(img + "/to_hot_cmap")
+            for i in image_list:
+                save_path = img + "/to_hot_cmap/" + i.split('/')[-1]
+                img_arr = image.load_img(i, color_mode="grayscale")
+                img_arr = image.img_to_array(img_arr)
+                img_arr = img_arr.reshape(img_arr.shape[0], img_arr.shape[1])
+                img_arr = normalize(img_arr)
+                ax.imshow(img_arr, cmap="hot")
+                fig.savefig(save_path)
+            print("🚩Done converting, converted images are saved to", img + "/to_hot_cmap/")
+            plt.close()
+            return 0
+
+    img = np.argmax(img, axis=3)
+    img = img.reshape(list(img.shape[1:3]))
+    plt.imshow(img, cmap="hot")
+    plt.savefig(save_path)
+    if len(list(img.shape)) == 4:  # this means the img is a tensor, in which the 1st dim is the num of samples
+        img = np.argmax(img, axis=3)
+        img = img.reshape(list(img.shape[1:3]))
+    else:
+        img = img.reshape(img.shape[0], img.shape[1])
+        print(img.shape)
+    img = normalize(img)
+    fig = plt.figure(frameon=False,
+                     figsize=(img.shape[1] / 500, img.shape[0] / 500),  # figsize(width, height)
+                     dpi=500)
+    ax = plt.Axes(fig, [0., 0., 1., 1.])
+    ax.set_axis_off()
+    fig.add_axes(ax)
+    ax.imshow(img, cmap="hot")
+    if save_path is None:
+        save_path = "to_hot_cmap.png"
+    fig.savefig(save_path)
+    print("🚩Saved prediction to", save_path)
+    plt.close()
+    del img
 
 
 def read_image(file_queue, shape):
@@ -83,3 +200,187 @@ def batch_norm(x, is_training, eps=EPS, decay=0.9, affine=True, name='BatchNorm2
 def merge_results_from_contracting_and_upsampling(result_from_contracting, result_from_upsampling):
     result_from_contracting_crop = result_from_contracting
     return tf.concat(values=[result_from_contracting_crop, result_from_upsampling], axis=-1)
+
+
+def train(unet):
+    train_image_filename_queue = tf.train.string_input_producer(
+        string_tensor=tf.train.match_filenames_once(TRAIN_SET_PATH), num_epochs=FLAGS.epoch_num, shuffle=True)
+    train_images, train_labels = read_image_batch(train_image_filename_queue, TRAIN_BATCH_SIZE)
+    tf.summary.scalar("loss", unet.loss_mean)
+    tf.summary.scalar('accuracy', unet.accuracy)
+    merged_summary = tf.summary.merge_all()
+    all_parameters_saver = tf.train.Saver()
+    divisor = step_size_of_showing_result(TRAIN_BATCH_SIZE)
+    with tf.Session() as sess:
+        sess.run(tf.global_variables_initializer())
+        sess.run(tf.local_variables_initializer())
+        summary_writer = tf.summary.FileWriter(LOG_DIR, sess.graph)
+        tf.summary.FileWriter(MODEL_SAVE_DIR, sess.graph)
+        coord = tf.train.Coordinator()
+        threads = tf.train.start_queue_runners(coord=coord)
+        try:
+            epoch = 0
+            while not coord.should_stop():
+                # run training
+                example, label = sess.run([train_images, train_labels])  # get image and label，type is numpy.ndarry
+                label = label.reshape(TRAIN_BATCH_SIZE, INPUT_IMG_HEIGHT, INPUT_IMG_WIDTH)
+
+                lo, acc, summary_str = sess.run(
+                    [unet.loss_mean, unet.accuracy, merged_summary],
+                    feed_dict={
+                        unet.input_image: example,
+                        unet.input_label: label,
+                        unet.keep_prob: 1.0,
+                        unet.lamb: 0.004,
+                        unet.is_training: True}
+                )
+                summary_writer.add_summary(summary_str, epoch)
+                sess.run([unet.train_step], feed_dict={unet.input_image: example, unet.input_label: label,
+                                                       unet.keep_prob: 1.0, unet.lamb: 0.004, unet.is_training: True}
+                         )
+                epoch += 1
+                if epoch % divisor == 0:
+                    logging.info('num %d , loss: %.6f , accuracy: %.6f' % (epoch * TRAIN_BATCH_SIZE, lo, acc))
+        except tf.errors.OutOfRangeError:
+            logging.warning('❗️Done training -- epoch limit reached')
+        finally:
+            all_parameters_saver.save(sess=sess, save_path=CKPT_PATH)
+            coord.request_stop()
+        coord.join(threads)
+    logging.warning('❗️Done training. TOTAL: num: %d , loss: %.6f , accuracy: %.6f\n'
+                    % (epoch * TRAIN_BATCH_SIZE, lo, acc))
+    logging.info("🚩model has been saved as " + CKPT_PATH)
+
+
+def validate(unet):
+    validation_image_filename_queue = tf.train.string_input_producer(
+        string_tensor=tf.train.match_filenames_once(VALIDATE_SET_PATH), num_epochs=1, shuffle=True)
+    validation_images, validation_labels = read_image_batch(validation_image_filename_queue,
+                                                            VALIDATION_BATCH_SIZE)
+    # tf.summary.scalar("loss", self.loss_mean)
+    # tf.summary.scalar('accuracy', self.accuracy)
+    # merged_summary = tf.summary.merge_all()
+    all_parameters_saver = tf.train.Saver()
+    divisor = step_size_of_showing_result(VALIDATION_BATCH_SIZE)
+    with tf.Session() as sess:
+        sess.run(tf.global_variables_initializer())
+        sess.run(tf.local_variables_initializer())
+        # summary_writer = tf.summary.FileWriter(LOGS_DIR, sess.graph)
+        # tf.summary.FileWriter(SAVED_MODELS_DIR, sess.graph)
+        all_parameters_saver.restore(sess=sess, save_path=CKPT_PATH)
+        coord = tf.train.Coordinator()
+        threads = tf.train.start_queue_runners(coord=coord)
+        try:
+            epoch = 0
+            while not coord.should_stop():
+                example, label = sess.run([validation_images, validation_labels])
+                label = label.reshape(VALIDATION_BATCH_SIZE, INPUT_IMG_HEIGHT, INPUT_IMG_WIDTH)
+                lo, acc = sess.run(
+                    [unet.loss_mean, unet.accuracy],
+                    feed_dict={
+                        unet.input_image: example,
+                        unet.input_label: label,
+                        unet.keep_prob: 1.0,
+                        unet.lamb: 0.004,
+                        unet.is_training: False}
+                )
+                # summary_writer.add_summary(summary_str, epoch)
+                epoch += 1
+                if epoch % divisor == 0:
+                    logging.info('num %d , loss: %.6f , accuracy: %.6f' % (epoch * VALIDATION_BATCH_SIZE, lo, acc))
+        except tf.errors.OutOfRangeError:
+            logging.warning('❗️Done validating -- epoch limit reached')
+        finally:
+            coord.request_stop()
+        coord.join(threads)
+    logging.warning('❗️Done validating. TOTAL: num: %d , loss: %.6f , accuracy: %.6f'
+                    % (epoch * VALIDATION_BATCH_SIZE, lo, acc))
+
+
+def test(unet):
+    import cv2
+    test_image_filename_queue = tf.train.string_input_producer(
+        string_tensor=tf.train.match_filenames_once(TEST_SET_PATH), num_epochs=1, shuffle=True)
+    test_images, test_labels = read_image_batch(test_image_filename_queue, TEST_BATCH_SIZE)
+    # tf.summary.scalar("loss", self.loss_mean)
+    # tf.summary.scalar('accuracy', self.accuracy)
+    # merged_summary = tf.summary.merge_all()
+    all_parameters_saver = tf.train.Saver()
+    divisor = step_size_of_showing_result(TEST_BATCH_SIZE)
+    with tf.Session() as sess:
+        sess.run(tf.global_variables_initializer())
+        sess.run(tf.local_variables_initializer())
+        # summary_writer = tf.summary.FileWriter(LOGS_DIR, sess.graph)
+        # tf.summary.FileWriter(SAVED_MODELS_DIR, sess.graph)
+        all_parameters_saver.restore(sess=sess, save_path=CKPT_PATH)
+        coord = tf.train.Coordinator()
+        threads = tf.train.start_queue_runners(coord=coord)
+        sum_loss = 0.0
+        sum_acc = 0.0
+        try:
+            epoch = 0
+            while not coord.should_stop():
+                example, label = sess.run([test_images, test_labels])
+                label = label.reshape(TEST_BATCH_SIZE, INPUT_IMG_HEIGHT, INPUT_IMG_WIDTH)
+                img, loss, acc = sess.run(
+                    [tf.argmax(input=unet.prediction, axis=3), unet.loss_mean, unet.accuracy],
+                    feed_dict={
+                        unet.input_image: example,
+                        unet.input_label: label,
+                        unet.keep_prob: 1.0,
+                        unet.lamb: 0.004,
+                        unet.is_training: False
+                    }
+                )
+                sum_loss += loss
+                sum_acc += acc
+                cv2.imwrite(os.path.join(TEST_SAVE_DIR, '%d.png' % epoch), img[0] * 255)
+                epoch += 1
+                if epoch % divisor == 0:
+                    logging.info('num %d ,  accuracy: %.6f' % (epoch * TEST_BATCH_SIZE, acc))
+        except tf.errors.OutOfRangeError:
+            logging.warning('❗️Done testing -- epoch limit reached')
+        finally:
+            coord.request_stop()
+        coord.join(threads)
+    logging.warning('❗️Done testing. Average loss: %.6f , accuracy: %.6f' % (sum_loss / epoch, sum_acc / epoch))
+
+
+def predict(unet, prediction_save_dir=PREDICTION_SAVE_DIR, ckpt_path=CKPT_PATH):
+    import cv2
+    from keras.preprocessing import image
+    import numpy as np
+    image_list = get_sorted_files(ORIGINAL_IMG_DIR, "png")
+    logging.info("🚩️" + str(len(image_list)) + " images to be predicted, will be saved to " + prediction_save_dir)
+    if not os.path.lexists(PREDICTION_SAVE_DIR):
+        os.mkdir(PREDICTION_SAVE_DIR)
+    all_parameters_saver = tf.train.Saver()
+    with tf.Session() as sess:
+        sess.run(tf.global_variables_initializer())
+        sess.run(tf.local_variables_initializer())
+        # summary_writer = tf.summary.FileWriter(LOGS_DIR, sess.graph)
+        # tf.summary.FileWriter(SAVED_MODELS_DIR, sess.graph)
+        all_parameters_saver.restore(sess=sess, save_path=ckpt_path)
+        for index, image_path in enumerate(image_list):
+            original_img = image.load_img(image_path,
+                                          target_size=(
+                                              OUTPUT_IMG_HEIGHT, OUTPUT_IMG_WIDTH, OUTPUT_IMG_CHANNEL),
+                                          color_mode="grayscale")
+            original_img = image.img_to_array(original_img)
+            img = np.expand_dims(original_img, axis=0)
+            predict_image = sess.run(unet.prediction,
+                                     feed_dict={
+                                         unet.input_image: img,
+                                         unet.keep_prob: 1.0,
+                                         unet.lamb: 0.004,
+                                         unet.is_training: False
+                                     }
+                                     )
+            # save_path = os.path.join(PREDICTION_SAVED_DIRECTORY, '%d.png' % index)
+            # predict_with_models.to_hot_cmap(predict_image, save_path, argmax_axis=3)
+            predict_image = predict_image.reshape(OUTPUT_IMG_HEIGHT, OUTPUT_IMG_WIDTH, OUTPUT_IMG_CHANNEL)
+            # image.save_img(os.path.join(PREDICTION_SAVED_DIRECTORY, '%d.png' % index), predict_image * 255)
+            cv2.imwrite(os.path.join(PREDICTION_SAVE_DIR, '%d.png' % index), predict_image * 255)
+    logging.info("🚩️Predictions are saved, now converting them to 'hot' color map")
+    to_hot_cmap(PREDICTION_SAVE_DIR)
+    logging.warning('❗️Done prediction')

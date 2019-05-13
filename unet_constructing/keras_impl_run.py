@@ -14,13 +14,13 @@ from module_minc_keras.minc_keras import *
 from unet_constructing.keras_impl import (original, original_with_BN, smaller, smaller_with_BN)
 
 FLAGS = tf.flags.FLAGS
-tf.flags.DEFINE_string(name='dataset_path', default=GlobalVar.DATASET_PATH + "/mri_pad_4",
+tf.flags.DEFINE_string(name='dataset_dir_path', default=GlobalVar.DATASET_PATH + "/mri_pad_4",
                        help='path of the dataset dir you want to use')
 tf.flags.DEFINE_string(name='structure', default="original",
                        help="structure of U-Net you want to use, like original, smaller")
 tf.flags.DEFINE_integer(name='epoch_num', default=3, help='epoch num')
 
-ROOT_OUTPUT_DIR = FLAGS.dataset_path + '/models/keras_impl/'
+ROOT_OUTPUT_DIR = FLAGS.dataset_dir_path + '/models/keras_impl/'
 
 REAL_OUTPUT_DIR = ROOT_OUTPUT_DIR + '/' + FLAGS.structure
 
@@ -39,14 +39,14 @@ def choose_unet(structure_name=FLAGS.structure):
 
 
 def main():
-    logging.info("🚩Use " + FLAGS.dataset_path + " dataset to train " + str(FLAGS.epoch_num) + " epoches")
-    serialized_file = FLAGS.dataset_path + "/serialized_dataset_object"
+    logging.info("🚩Use " + FLAGS.dataset_dir_path + " dataset to train " + str(FLAGS.epoch_num) + " epoches")
+    serialized_file = FLAGS.dataset_dir_path + "/serialized_dataset_object"
     if os.path.exists(serialized_file):
         with open(serialized_file, "rb") as f:
             logging.info("🚩Done deserializing file: " + serialized_file)
             [_, data] = pickle.load(f)
     else:
-        logging.error("❌" + FLAGS.dataset_path +
+        logging.error("❌" + FLAGS.dataset_dir_path +
                       " cannot be recognized, please use data_processing.prepare_datasets to generate.")
 
     # Load data
@@ -84,6 +84,7 @@ def main():
     # test model
     test_score = unet_model.evaluate(X_test_mri_pad_4, Y_test_mri_pad_4)
     logging.info("🚩Test : " + str(test_score))
+    logging.info("🚩model has been saved as " + model_save_path)
 
 
 if __name__ == "__main__":
