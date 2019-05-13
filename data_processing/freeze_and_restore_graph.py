@@ -1,13 +1,20 @@
-import argparse, sys
+import sys
+
 import tensorflow as tf
+
 from config_and_utils import GlobalVar
 
 PROJECT_DIR = GlobalVar.PROJECT_PATH
-OUTPUT_DIR = GlobalVar.OUTPUT_PATH + "/tf_implementation"
+OUTPUT_DIR = GlobalVar.OUTPUT_PATH + "/tf_impl_original"
 SAVED_MODELS = OUTPUT_DIR + "/saved_models"
 FROZEN_GRAPH_FILE = SAVED_MODELS + "/frozen_graph.pb"
 
 OUTPUT_NODE_NAMES = "accuracy/Mean"
+
+FLAGS = tf.flags.FLAGS
+tf.flags.DEFINE_string(name="--model_dir", default=SAVED_MODELS, help="Model folder containing ckpt to export")
+tf.flags.DEFINE_string(name="--output_node_names", default=OUTPUT_NODE_NAMES,
+                       help="The name of the output nodes, comma separated.")
 
 
 def freeze_graph(model_dir=SAVED_MODELS, output_node_names=OUTPUT_NODE_NAMES):
@@ -86,11 +93,4 @@ def get_all_output_nodes():
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--model_dir", type=str, default=SAVED_MODELS,
-                        help="Model folder containing ckpt to export")
-    parser.add_argument("--output_node_names", type=str, default=OUTPUT_NODE_NAMES,
-                        help="The name of the output nodes, comma separated.")
-    FLAGS, _ = parser.parse_known_args()
-
     freeze_graph(FLAGS.model_dir, FLAGS.output_node_names)

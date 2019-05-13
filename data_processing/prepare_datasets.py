@@ -28,7 +28,7 @@ def prepare_dataset(dataset_name="mri", ratios=[0.75, 0.15], save_path=None):
     :return:
     """
     if not (dataset_name == "mri" or dataset_name == "sorteo"):
-        exit("❗️Error: dataset_name can only be 'mri' or 'sorteo'")
+        sys.exit("❗️Error: dataset_name can only be 'mri' or 'sorteo'")
     dataset_name = "/" + dataset_name
     os.chdir(DATASET_PATH)
     if not os.path.exists(DATASET_PATH + dataset_name):
@@ -52,7 +52,7 @@ def prepare_dataset(dataset_name="mri", ratios=[0.75, 0.15], save_path=None):
                 os.system(cmd)
             print("done creating")
         except Exception:
-            exit("❗️some error happened, please try again")
+            sys.exit("❗️some error happened, please try again")
 
     # make dirs to store generated dataset
     if save_path is None:
@@ -68,16 +68,19 @@ def prepare_dataset(dataset_name="mri", ratios=[0.75, 0.15], save_path=None):
     report_dir = save_path + "/report"
     serialized_file = save_path + "/serialized_dataset_object"
     input_str, label_str = None, None
+
+    # if different datasets are added, tags used to diff images and labels should also be added to here
     if dataset_name == "/mri":
         input_str = '_T1w_anat_rsl.mnc'
         label_str = 'variant-seg'
     elif dataset_name == "/sorteo":
         input_str = '_pet.mnc'
         label_str = 'brainmask'
+
     result = prepare_data(source_data_dir, data_dir, report_dir,
                           input_str=input_str,
                           label_str=label_str,
-                          pad_base=4,
+                          pad_base=4,  # set the pad_base the same value of times you down-sample with max_pool in unet
                           clobber=True,
                           ratios=ratios)
     os.chdir(PROJECT_PATH)

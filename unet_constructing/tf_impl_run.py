@@ -128,15 +128,15 @@ def train(unet):
                          )
                 epoch += 1
                 if epoch % divisor == 0:
-                    print('num %d , loss: %.6f , accuracy: %.6f' % (epoch * TRAIN_BATCH_SIZE, lo, acc))
+                    logging.info('num %d , loss: %.6f , accuracy: %.6f' % (epoch * TRAIN_BATCH_SIZE, lo, acc))
         except tf.errors.OutOfRangeError:
-            logging.info('❗️Done training -- epoch limit reached')
+            logging.warning('❗️Done training -- epoch limit reached')
         finally:
             all_parameters_saver.save(sess=sess, save_path=CKPT_PATH)
             coord.request_stop()
         coord.join(threads)
-    print('❗️Done training. Total: num %d , loss: %.6f , accuracy: %.6f\n'
-          % (epoch * TRAIN_BATCH_SIZE, lo, acc))
+    logging.warning('❗️Done training. TOTAL: num: %d , loss: %.6f , accuracy: %.6f\n'
+                    % (epoch * TRAIN_BATCH_SIZE, lo, acc))
 
 
 def validate(unet):
@@ -174,14 +174,14 @@ def validate(unet):
                 # summary_writer.add_summary(summary_str, epoch)
                 epoch += 1
                 if epoch % divisor == 0:
-                    print('num %d , loss: %.6f , accuracy: %.6f' % (epoch * VALIDATION_BATCH_SIZE, lo, acc))
+                    logging.info('num %d , loss: %.6f , accuracy: %.6f' % (epoch * VALIDATION_BATCH_SIZE, lo, acc))
         except tf.errors.OutOfRangeError:
-            print('❗️Done validating -- epoch limit reached')
+            logging.warning('❗️Done validating -- epoch limit reached')
         finally:
             coord.request_stop()
         coord.join(threads)
-    print('❗️Done validating. Total: num %d , loss: %.6f , accuracy: %.6f\n'
-          % (epoch * VALIDATION_BATCH_SIZE, lo, acc))
+    logging.warning('❗️Done validating. TOTAL: num: %d , loss: %.6f , accuracy: %.6f'
+                    % (epoch * VALIDATION_BATCH_SIZE, lo, acc))
 
 
 def test(unet):
@@ -224,13 +224,13 @@ def test(unet):
                 cv2.imwrite(os.path.join(TEST_SAVE_DIR, '%d.png' % epoch), img[0] * 255)
                 epoch += 1
                 if epoch % divisor == 0:
-                    print('num %d ,  accuracy: %.6f' % (epoch * TEST_BATCH_SIZE, acc))
+                    logging.info('num %d ,  accuracy: %.6f' % (epoch * TEST_BATCH_SIZE, acc))
         except tf.errors.OutOfRangeError:
-            print('❗️Done testing -- epoch limit reached')
+            logging.warning('❗️Done testing -- epoch limit reached')
         finally:
             coord.request_stop()
         coord.join(threads)
-    print('❗️Done testing. Average loss: %.6f , accuracy: %.6f\n' % (sum_loss / epoch, sum_acc / epoch))
+    logging.warning('❗️Done testing. Average loss: %.6f , accuracy: %.6f' % (sum_loss / epoch, sum_acc / epoch))
 
 
 def predict(unet, prediction_save_dir=PREDICTION_SAVE_DIR, ckpt_path=CKPT_PATH):
@@ -238,7 +238,7 @@ def predict(unet, prediction_save_dir=PREDICTION_SAVE_DIR, ckpt_path=CKPT_PATH):
     from keras.preprocessing import image
     import numpy as np
     image_list = get_sorted_files(ORIGINAL_IMG_DIR, "png")
-    print("🚩️" + str(len(image_list)) + " images to be predicted, will be saved to", prediction_save_dir)
+    logging.info("🚩️" + str(len(image_list)) + " images to be predicted, will be saved to " + prediction_save_dir)
     if not os.path.lexists(PREDICTION_SAVE_DIR):
         os.mkdir(PREDICTION_SAVE_DIR)
     all_parameters_saver = tf.train.Saver()
@@ -268,9 +268,9 @@ def predict(unet, prediction_save_dir=PREDICTION_SAVE_DIR, ckpt_path=CKPT_PATH):
             predict_image = predict_image.reshape(OUTPUT_IMG_HEIGHT, OUTPUT_IMG_WIDTH, OUTPUT_IMG_CHANNEL)
             # image.save_img(os.path.join(PREDICTION_SAVED_DIRECTORY, '%d.png' % index), predict_image * 255)
             cv2.imwrite(os.path.join(PREDICTION_SAVE_DIR, '%d.png' % index), predict_image * 255)
-    print("🚩Predictions are saved, now converting them to 'hot' color map")
+    logging.info("🚩️Predictions are saved, now converting them to 'hot' color map")
     predict_with_models.to_hot_cmap(PREDICTION_SAVE_DIR)
-    print('❗️Done prediction\n')
+    logging.warning('❗️Done prediction')
 
 
 if __name__ == '__main__':
