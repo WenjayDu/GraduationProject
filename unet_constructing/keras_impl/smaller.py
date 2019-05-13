@@ -33,7 +33,7 @@ class UNet:
         pool4 = MaxPooling2D(pool_size=(2, 2))(conv4)
 
         conv5 = Convolution2D(512, 3, 3, activation='relu', border_mode='same')(pool4)
-        conv5 = Convolution2D(512, 3, 3, activation='reuplu', border_mode='same')(conv5)
+        conv5 = Convolution2D(512, 3, 3, activation='relu', border_mode='same')(conv5)
 
         up5 = UpSampling2D(size=(2, 2))(conv5)
         conc5 = Concatenate(axis=3)([up5, conv4])
