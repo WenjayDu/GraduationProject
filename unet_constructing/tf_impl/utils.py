@@ -30,7 +30,12 @@ tf.flags.DEFINE_string('to_predict', default="yes", help='whether to predict, ye
 tf.flags.DEFINE_list('input_shape', default=[144, 112, 1], help='shape of input data')
 tf.flags.DEFINE_list('output_shape', default=[144, 112, 3], help='shape of input data')
 
-ROOT_OUTPUT_DIR = FLAGS.dataset_dir_path + '/models/tf_impl/'
+# these flags are added because error is arisen for they undefined when importing this module from
+# data_processing.predict_with_models, therefore, define them here
+tf.flags.DEFINE_string(name="mode", default="client", help="just to avoid err")
+tf.flags.DEFINE_integer(name="port", default=65533, help="just to avoid err")
+
+ROOT_OUTPUT_DIR = FLAGS.dataset_dir_path + '/models/tf_impl'
 REAL_OUTPUT_DIR = ROOT_OUTPUT_DIR + '/' + FLAGS.structure
 
 LOG_DIR = REAL_OUTPUT_DIR + "/logs"
@@ -225,19 +230,16 @@ def train(unet):
                 example, label = sess.run([train_images, train_labels])  # get image and label，type is numpy.ndarry
                 label = label.reshape(TRAIN_BATCH_SIZE, INPUT_IMG_HEIGHT, INPUT_IMG_WIDTH)
 
-                lo, acc, summary_str = sess.run(
-                    [unet.loss_mean, unet.accuracy, merged_summary],
-                    feed_dict={
-                        unet.input_image: example,
-                        unet.input_label: label,
-                        unet.keep_prob: 1.0,
-                        unet.lamb: 0.004,
-                        unet.is_training: True}
-                )
+                lo, acc, summary_str = sess.run([unet.loss_mean, unet.accuracy, merged_summary],
+                                                feed_dict={unet.input_image: example,
+                                                           unet.input_label: label,
+                                                           unet.keep_prob: 1.0,
+                                                           unet.lamb: 0.004,
+                                                           unet.is_training: True}
+                                                )
                 summary_writer.add_summary(summary_str, epoch)
                 sess.run([unet.train_step], feed_dict={unet.input_image: example, unet.input_label: label,
-                                                       unet.keep_prob: 1.0, unet.lamb: 0.004, unet.is_training: True}
-                         )
+                                                       unet.keep_prob: 1.0, unet.lamb: 0.004, unet.is_training: True})
                 epoch += 1
                 if epoch % divisor == 0:
                     logging.info('num %d , loss: %.6f , accuracy: %.6f' % (epoch * TRAIN_BATCH_SIZE, lo, acc))
@@ -275,15 +277,13 @@ def validate(unet):
             while not coord.should_stop():
                 example, label = sess.run([validation_images, validation_labels])
                 label = label.reshape(VALIDATION_BATCH_SIZE, INPUT_IMG_HEIGHT, INPUT_IMG_WIDTH)
-                lo, acc = sess.run(
-                    [unet.loss_mean, unet.accuracy],
-                    feed_dict={
-                        unet.input_image: example,
-                        unet.input_label: label,
-                        unet.keep_prob: 1.0,
-                        unet.lamb: 0.004,
-                        unet.is_training: False}
-                )
+                lo, acc = sess.run([unet.loss_mean, unet.accuracy],
+                                   feed_dict={unet.input_image: example,
+                                              unet.input_label: label,
+                                              unet.keep_prob: 1.0,
+                                              unet.lamb: 0.004,
+                                              unet.is_training: False}
+                                   )
                 # summary_writer.add_summary(summary_str, epoch)
                 epoch += 1
                 if epoch % divisor == 0:
@@ -322,16 +322,14 @@ def test(unet):
             while not coord.should_stop():
                 example, label = sess.run([test_images, test_labels])
                 label = label.reshape(TEST_BATCH_SIZE, INPUT_IMG_HEIGHT, INPUT_IMG_WIDTH)
-                img, loss, acc = sess.run(
-                    [tf.argmax(input=unet.prediction, axis=3), unet.loss_mean, unet.accuracy],
-                    feed_dict={
-                        unet.input_image: example,
-                        unet.input_label: label,
-                        unet.keep_prob: 1.0,
-                        unet.lamb: 0.004,
-                        unet.is_training: False
-                    }
-                )
+                img, loss, acc = sess.run([tf.argmax(input=unet.prediction, axis=3), unet.loss_mean, unet.accuracy],
+                                          feed_dict={unet.input_image: example,
+                                                     unet.input_label: label,
+                                                     unet.keep_prob: 1.0,
+                                                     unet.lamb: 0.004,
+                                                     unet.is_training: False
+                                                     }
+                                          )
                 sum_loss += loss
                 sum_acc += acc
                 cv2.imwrite(os.path.join(TEST_SAVE_DIR, '%d.png' % epoch), img[0] * 255)
@@ -363,18 +361,16 @@ def predict(unet, prediction_save_dir=PREDICTION_SAVE_DIR, ckpt_path=CKPT_PATH):
         all_parameters_saver.restore(sess=sess, save_path=ckpt_path)
         for index, image_path in enumerate(image_list):
             original_img = image.load_img(image_path,
-                                          target_size=(
-                                              OUTPUT_IMG_HEIGHT, OUTPUT_IMG_WIDTH, OUTPUT_IMG_CHANNEL),
+                                          target_size=(OUTPUT_IMG_HEIGHT, OUTPUT_IMG_WIDTH, OUTPUT_IMG_CHANNEL),
                                           color_mode="grayscale")
             original_img = image.img_to_array(original_img)
             img = np.expand_dims(original_img, axis=0)
             predict_image = sess.run(unet.prediction,
-                                     feed_dict={
-                                         unet.input_image: img,
-                                         unet.keep_prob: 1.0,
-                                         unet.lamb: 0.004,
-                                         unet.is_training: False
-                                     }
+                                     feed_dict={unet.input_image: img,
+                                                unet.keep_prob: 1.0,
+                                                unet.lamb: 0.004,
+                                                unet.is_training: False
+                                                }
                                      )
             # save_path = os.path.join(PREDICTION_SAVED_DIRECTORY, '%d.png' % index)
             # predict_with_models.to_hot_cmap(predict_image, save_path, argmax_axis=3)
