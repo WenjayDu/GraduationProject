@@ -1,16 +1,15 @@
 import os
 import sys
-import matplotlib.pyplot as plt
+
 import numpy as np
 import tensorflow as tf
-from keras.preprocessing import image
 
 curPath = os.path.abspath(os.path.dirname(__file__))
 rootPath = os.path.split(curPath)[0]
 sys.path.append(rootPath)
 
-from module_minc_keras.utils import normalize
 from config_and_utils import GlobalVar, logging, get_sorted_files
+from data_processing.img_utils import to_hot_cmap
 
 FLAGS = tf.flags.FLAGS
 tf.flags.DEFINE_string(name='dataset_dir_path', default=GlobalVar.DATASET_PATH + "/mri_pad_4",
@@ -66,69 +65,6 @@ TEST_SET_PATH = FLAGS.dataset_dir_path + "/tfrecords/test.tfrecords"
 # to prevent the 0 operation when dividing by the variance,
 # may be different in different frameworks.
 EPS = 10e-5
-
-
-def to_hot_cmap(img, save_path=None):
-    """
-    convert an img to a hot colormap
-    :param img: path of an img or a dir containing png images to be converted or an numpy array
-    :param save_path: save path
-    :param argmax_axis:
-    :return:
-    """
-    if type(img) == str:
-        if os.path.isfile(img):
-            img = image.load_img(img, color_mode="grayscale")
-            img = image.img_to_array(img)
-        elif os.path.isdir(img):
-            print("🚩Converting all .png files in", img)
-            image_list = get_sorted_files(img, "png")
-            example = image.load_img(image_list[0])
-            example = image.img_to_array(example)
-            fig = plt.figure(frameon=False,
-                             figsize=(example.shape[1] / 500, example.shape[0] / 500),  # figsize(width, height)
-                             dpi=500)
-            ax = plt.Axes(fig, [0., 0., 1., 1.])
-            ax.set_axis_off()
-            fig.add_axes(ax)
-            if not os.path.exists(img + "/to_hot_cmap"):
-                os.makedirs(img + "/to_hot_cmap")
-            for i in image_list:
-                save_path = img + "/to_hot_cmap/" + i.split('/')[-1]
-                img_arr = image.load_img(i, color_mode="grayscale")
-                img_arr = image.img_to_array(img_arr)
-                img_arr = img_arr.reshape(img_arr.shape[0], img_arr.shape[1])
-                img_arr = normalize(img_arr)
-                ax.imshow(img_arr, cmap="hot")
-                fig.savefig(save_path)
-            print("🚩Done converting, converted images are saved to", img + "/to_hot_cmap/")
-            plt.close()
-            return 0
-
-    img = np.argmax(img, axis=3)
-    img = img.reshape(list(img.shape[1:3]))
-    plt.imshow(img, cmap="hot")
-    plt.savefig(save_path)
-    if len(list(img.shape)) == 4:  # this means the img is a tensor, in which the 1st dim is the num of samples
-        img = np.argmax(img, axis=3)
-        img = img.reshape(list(img.shape[1:3]))
-    else:
-        img = img.reshape(img.shape[0], img.shape[1])
-        print(img.shape)
-    img = normalize(img)
-    fig = plt.figure(frameon=False,
-                     figsize=(img.shape[1] / 500, img.shape[0] / 500),  # figsize(width, height)
-                     dpi=500)
-    ax = plt.Axes(fig, [0., 0., 1., 1.])
-    ax.set_axis_off()
-    fig.add_axes(ax)
-    ax.imshow(img, cmap="hot")
-    if save_path is None:
-        save_path = "to_hot_cmap.png"
-    fig.savefig(save_path)
-    print("🚩Saved prediction to", save_path)
-    plt.close()
-    del img
 
 
 def read_image(file_queue, shape):
@@ -344,14 +280,13 @@ def test(unet):
     logging.warning('❗️Done testing. Average loss: %.6f , accuracy: %.6f' % (sum_loss / epoch, sum_acc / epoch))
 
 
-def predict(unet, prediction_save_dir=PREDICTION_SAVE_DIR, ckpt_path=CKPT_PATH):
-    import cv2
+def predict(unet, prediction_save_dir=PREDICTION_SAVE_DIR, ckpt_path=CKPT_PATH, original_img_path=ORIGINAL_IMG_DIR):
     from keras.preprocessing import image
     import numpy as np
-    image_list = get_sorted_files(ORIGINAL_IMG_DIR, "png")
+    image_list = get_sorted_files(original_img_path, "png")
     logging.info("🚩️" + str(len(image_list)) + " images to be predicted, will be saved to " + prediction_save_dir)
-    if not os.path.lexists(PREDICTION_SAVE_DIR):
-        os.mkdir(PREDICTION_SAVE_DIR)
+    if not os.path.lexists(prediction_save_dir):
+        os.mkdir(prediction_save_dir)
     all_parameters_saver = tf.train.Saver()
     with tf.Session() as sess:
         sess.run(tf.global_variables_initializer())
@@ -372,11 +307,12 @@ def predict(unet, prediction_save_dir=PREDICTION_SAVE_DIR, ckpt_path=CKPT_PATH):
                                                 unet.is_training: False
                                                 }
                                      )
-            # save_path = os.path.join(PREDICTION_SAVED_DIRECTORY, '%d.png' % index)
+            # save_path = os.path.join(prediction_save_dir, '%d.png' % index)
             # predict_with_models.to_hot_cmap(predict_image, save_path, argmax_axis=3)
             predict_image = predict_image.reshape(OUTPUT_IMG_HEIGHT, OUTPUT_IMG_WIDTH, OUTPUT_IMG_CHANNEL)
-            # image.save_img(os.path.join(PREDICTION_SAVED_DIRECTORY, '%d.png' % index), predict_image * 255)
-            cv2.imwrite(os.path.join(PREDICTION_SAVE_DIR, '%d.png' % index), predict_image * 255)
+            image.save_img(os.path.join(prediction_save_dir, '%d.png' % index), predict_image * 255)
+            # cv2.imwrite(os.path.join(prediction_save_dir, '%d.png' % index), predict_image)
+
     logging.info("🚩️Predictions are saved, now converting them to 'hot' color map")
-    to_hot_cmap(PREDICTION_SAVE_DIR)
+    to_hot_cmap(prediction_save_dir)
     logging.warning('❗️Done prediction')
