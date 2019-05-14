@@ -33,6 +33,7 @@ tf.flags.DEFINE_list('output_shape', default=[144, 112, 3], help='shape of input
 # data_processing.predict_with_models, therefore, define them here
 tf.flags.DEFINE_string(name="mode", default="client", help="just to avoid err")
 tf.flags.DEFINE_integer(name="port", default=65533, help="just to avoid err")
+tf.flags.DEFINE_string(name="f", default="", help="kernel")
 
 ROOT_OUTPUT_DIR = FLAGS.dataset_dir_path + '/models/tf_impl'
 REAL_OUTPUT_DIR = ROOT_OUTPUT_DIR + '/' + FLAGS.structure
