@@ -79,7 +79,8 @@ def main():
                              epochs=FLAGS.epoch_num,
                              callbacks=[TensorBoard(log_dir=LOGS_DIR)])
     # save model
-    model_save_path = MODEL_SAVE_DIR + "/unet_model.hdf5"
+    model_name = "model_of_" + FLAGS.structure + ".hdf5"
+    model_save_path = MODEL_SAVE_DIR + '/' + model_name
     unet_model.save(model_save_path)
     # test model
     test_score = unet_model.evaluate(X_test_mri_pad_4, Y_test_mri_pad_4)

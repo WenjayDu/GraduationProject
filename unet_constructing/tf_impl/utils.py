@@ -39,7 +39,7 @@ REAL_OUTPUT_DIR = ROOT_OUTPUT_DIR + '/' + FLAGS.structure
 
 LOG_DIR = REAL_OUTPUT_DIR + "/logs"
 MODEL_SAVE_DIR = REAL_OUTPUT_DIR + "/saved_model"
-CKPT_PATH = MODEL_SAVE_DIR + "/unet_model.ckpt"
+CKPT_PATH = MODEL_SAVE_DIR + "/model_of_" + FLAGS.structure + ".ckpt"
 
 DATASET_DIR = GlobalVar.DATASET_PATH
 
