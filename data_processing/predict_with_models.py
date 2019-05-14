@@ -11,7 +11,7 @@ curPath = os.path.abspath(os.path.dirname(__file__))
 rootPath = os.path.split(curPath)[0]
 sys.path.append(rootPath)
 
-from config_and_utils import GlobalVar, logging, get_sorted_files
+from config_and_utils import GlobalVar, logging, get_sorted_files, get_dir_containing_file
 from unet_constructing.tf_impl.utils import predict
 from unet_constructing.tf_impl_run import choose_unet
 from data_processing.img_utils import to_hot_cmap
@@ -45,27 +45,49 @@ def safe_load_model(model_path):
 
 
 def predict_with_keras_model(model_path, img_path, img_size, prediction_save_dir=None):
+    print(img_path)
     if type(img_size) == tuple:
         img_size = list(img_size)
+    if img_size.__len__() == 2:
+        img_size = img_size + [3]
+    if prediction_save_dir is None:
+        prediction_save_dir = get_dir_containing_file(model_path) + "/predictions"
+    if not os.path.exists(prediction_save_dir):
+        os.makedirs(prediction_save_dir)
     logging.info("🚩️loading the model " + model_path)
     model = safe_load_model(model_path)
     # prepare image
-    img = image.load_img(img_path, target_size=img_size, color_mode="grayscale")
-    img_array = image.img_to_array(img)
-    img_array = np.expand_dims(img_array, axis=0)
-    # get prediction
-    predict_result = model.predict(img_array)
-    to_hot_cmap(img=predict_result, save_path=prediction_save_dir + "/prediction.png")
+    if os.path.isdir(img_path):
+        image_list = get_sorted_files(img_path, "png")
+        logging.info("🚩️" + str(len(image_list)) + " images to be predicted, will be saved to " + prediction_save_dir)
+        for index, image_path in enumerate(image_list):
+            original_img = image.load_img(image_path, target_size=img_size, color_mode="grayscale")
+            original_img = image.img_to_array(original_img)
+            img = np.expand_dims(original_img, axis=0)
+            prediction = model.predict(img)
+
+            prediction = prediction.reshape(img_size)
+            image.save_img(os.path.join(prediction_save_dir, '%d.png' % index), prediction * 255)
+        logging.info("🚩️Predictions are saved, now converting them to 'hot' color map")
+        to_hot_cmap(prediction_save_dir)
+        logging.warning('❗️Done prediction')
+    else:
+        img = image.load_img(img_path, target_size=img_size, color_mode="grayscale")
+        img_array = image.img_to_array(img)
+        img_array = np.expand_dims(img_array, axis=0)
+        # get prediction
+        prediction = model.predict(img_array)
+        to_hot_cmap(img=prediction, save_path=prediction_save_dir + "/prediction.png")
 
 
-def predict_with_tf_model(ckpt_path, structure, prediction_save_dir=None):
+def predict_with_tf_model(ckpt_path, structure, img_path, prediction_save_dir=None):
     unet = choose_unet(structure_name=structure)
     tf.reset_default_graph()
     unet.build_up_unet(batch_size=1)
     logging.info("🚩️start predicting...")
     if prediction_save_dir is None:
-        prediction_save_dir = ckpt_path.split('/unet_model.ckpt')[0] + "/predictions"
-    predict(unet, ckpt_path=ckpt_path, prediction_save_dir=prediction_save_dir)
+        prediction_save_dir = get_dir_containing_file(ckpt_path) + "/predictions"
+    predict(unet, ckpt_path=ckpt_path, original_img_path=img_path, prediction_save_dir=prediction_save_dir)
 
 
 if __name__ == "__main__":
