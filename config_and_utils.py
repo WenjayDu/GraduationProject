@@ -16,6 +16,21 @@ class GlobalVar:
     OUTPUT_PATH = PROJECT_PATH + "/output"
 
 
+def create_dir(directory):
+    if not os.path.exists(directory):
+        os.makedirs(directory)
+        logging.info("🚩Created directory:", directory)
+    return directory
+
+
+def set_up_output_dirs(base_dir):
+    create_dir(base_dir)
+    create_dir(base_dir + '/logs')
+    create_dir(base_dir + '/models')
+    create_dir(base_dir + '/models_eval')
+    create_dir(base_dir + '/predictions')
+
+
 # commonly used functions are also placed here
 def get_dir_containing_file(file):
     """
