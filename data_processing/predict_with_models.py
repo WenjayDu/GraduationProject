@@ -33,6 +33,8 @@ TF_PREDICTION_SAVE_DIR = OUTPUT_PATH + "/prediction_of_tf_model"
 FLAGS = tf.flags.FLAGS
 tf.flags.DEFINE_string(name="ckpt_path", default=DATASET_PATH + '/mri_pad_4/models/tf_impl/original/unet_model.ckpt',
                        help="path of checkpoint")
+tf.flags.DEFINE_string(name="img_path", default=IMG_PATH, help="path of img to predict")
+tf.flags.DEFINE_list(name="img_size", default=IMG_SIZE, help="size of output img")
 
 
 def safe_load_model(model_path):
@@ -65,7 +67,6 @@ def predict_with_keras_model(model_path, img_path, img_size, prediction_save_dir
             original_img = image.img_to_array(original_img)
             img = np.expand_dims(original_img, axis=0)
             prediction = model.predict(img)
-
             prediction = prediction.reshape(img_size)
             image.save_img(os.path.join(prediction_save_dir, '%d.png' % index), prediction * 255)
         logging.info("🚩️Predictions are saved, now converting them to 'hot' color map")
@@ -97,5 +98,5 @@ if __name__ == "__main__":
     if not os.path.exists(TF_PREDICTION_SAVE_DIR):
         os.makedirs(TF_PREDICTION_SAVE_DIR)
         logging.warning("❗️Creating non-existent dir" + TF_PREDICTION_SAVE_DIR)
-    predict_with_keras_model(model_path=FLAGS.model_path)
-    predict_with_tf_model(ckpt_path=FLAGS.ckpt_path, structure="original", )
+    predict_with_keras_model(model_path=FLAGS.model_path, img_path=FLAGS.img_path, img_size=FLAGS.img_size)
+    predict_with_tf_model(ckpt_path=FLAGS.ckpt_path, structure="original", img_path=FLAGS.img_path)
