@@ -5,16 +5,17 @@ from compressing_with_PF.unet_on_mri import ModelHelper
 from compressing_with_PF.config import GlobalPath
 
 OUTPUT_DIR = GlobalPath.OUTPUT_PATH + "/compressing_with_PF"
-LOGS_DIR = OUTPUT_DIR + "/logs"
-SAVED_MODELS_DIR = OUTPUT_DIR + "/saved_models"
 
-FLAGS = tf.app.flags.FLAGS
+FLAGS = tf.flags.FLAGS
+tf.flags.DEFINE_string('structure', 'original_with_BN', 'structure of the unet to use, like original/smaller')
 
-tf.app.flags.DEFINE_string('log_dir', LOGS_DIR, 'logging directory')
-tf.app.flags.DEFINE_boolean('enbl_multi_gpu', False, 'enable multi-GPU training')
-tf.app.flags.DEFINE_string('learner', 'full-prec', 'learner\'s name')
-tf.app.flags.DEFINE_string('exec_mode', 'train', 'execution mode: train / eval')
-tf.app.flags.DEFINE_boolean('debug', False, 'debugging information')
+LOGS_DIR = OUTPUT_DIR + '/' + FLAGS.structure + "/logs"
+
+tf.flags.DEFINE_string('log_dir', LOGS_DIR, 'logging directory')
+tf.flags.DEFINE_boolean('enbl_multi_gpu', False, 'enable multi-GPU training')
+tf.flags.DEFINE_string('learner', 'full-prec', 'learner\'s name')
+tf.flags.DEFINE_string('exec_mode', 'train', 'execution mode: train / eval')
+tf.flags.DEFINE_boolean('debug', False, 'debugging information')
 
 
 def main(unused_arg):

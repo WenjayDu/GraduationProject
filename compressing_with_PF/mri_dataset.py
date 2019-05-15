@@ -1,27 +1,24 @@
 import numpy as np
 import tensorflow as tf
-from datasets.abstract_dataset import AbstractDataset
+
 from compressing_with_PF.config import GlobalPath, cal_np_unique_num
+from datasets.abstract_dataset import AbstractDataset
 
 DATASET_PATH = GlobalPath.DATASET_PATH
 
-DATA_DIR = DATASET_PATH + "/mri_pad_4_results/data"
+DEFAULT_DATA_DIR = DATASET_PATH + "/mri_pad_4/data"
 
-FLAGS = tf.app.flags.FLAGS
-tf.app.flags.DEFINE_integer('nb_classes',
-                            cal_np_unique_num(DATA_DIR + "/validate_y.npy"),
-                            '# of classes')
-tf.app.flags.DEFINE_integer('nb_smpls_train',
-                            len(np.load(DATA_DIR + "/train_x.npy")),
-                            '# of samples for training')
-tf.app.flags.DEFINE_integer('nb_smpls_val',
-                            len(np.load(DATA_DIR + "/validate_x.npy")),
-                            '# of samples for validation')
-tf.app.flags.DEFINE_integer('nb_smpls_eval',
-                            len(np.load(DATA_DIR + "/test_x.npy")),
-                            '# of samples for evaluation')
-tf.app.flags.DEFINE_integer('batch_size', 1, 'batch size per GPU for training')
-tf.app.flags.DEFINE_integer('batch_size_eval', 1, 'batch size for evaluation')
+FLAGS = tf.flags.FLAGS
+tf.flags.DEFINE_string('data_dir', DEFAULT_DATA_DIR, 'dir of data used to train')
+tf.flags.DEFINE_integer('nb_classes', cal_np_unique_num(FLAGS.data_dir + "/data/validate_y.npy"), '# of classes')
+tf.flags.DEFINE_integer('nb_smpls_train', len(np.load(FLAGS.data_dir + "/data/train_x.npy")),
+                        '# of samples for training')
+tf.flags.DEFINE_integer('nb_smpls_val', len(np.load(FLAGS.data_dir + "/data/validate_x.npy")),
+                        '# of samples for validation')
+tf.flags.DEFINE_integer('nb_smpls_eval', len(np.load(FLAGS.data_dir + "/data/test_x.npy")),
+                        '# of samples for evaluation')
+tf.flags.DEFINE_integer('batch_size', 1, 'batch size per GPU for training')
+tf.flags.DEFINE_integer('batch_size_eval', 1, 'batch size for evaluation')
 
 
 class MriDataset(AbstractDataset):
@@ -41,12 +38,12 @@ class MriDataset(AbstractDataset):
         # setup paths to image & label files, and read in images & labels
         if is_train:
             self.batch_size = FLAGS.batch_size
-            image_file = DATA_DIR + '/train_x.npy'
-            label_file = DATA_DIR + '/train_y.npy'
+            image_file = FLAGS.data_dir + '/train_x.npy'
+            label_file = FLAGS.data_dir + '/train_y.npy'
         else:
             self.batch_size = FLAGS.batch_size_eval
-            image_file = DATA_DIR + '/validate_x.npy'
-            label_file = DATA_DIR + '/validate_y.npy'
+            image_file = FLAGS.data_dir + '/validate_x.npy'
+            label_file = FLAGS.data_dir + '/validate_y.npy'
         self.images, self.labels = load_npy(image_file, label_file)
         self.parse_fn = lambda x, y: parse_fn(x, y, is_train)
 
@@ -117,5 +114,6 @@ def parse_fn(image, label, is_train):
     #     image = tf.image.resize_image_with_crop_or_pad(image, IMAGE_HEI + 8, IMAGE_WID + 8)
     #     image = tf.random_crop(image, [IMAGE_HEI, IMAGE_WID, IMAGE_CHN])
     #     image = tf.image.random_flip_left_right(image)
-
+    image = tf.cast(image, tf.float32)
+    label = tf.cast(label, tf.float32)
     return image, label
