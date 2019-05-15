@@ -20,7 +20,7 @@ tf.flags.DEFINE_string(name='structure', default="original",
                        help="structure of U-Net you want to use, like original, smaller")
 tf.flags.DEFINE_integer(name='epoch_num', default=3, help='epoch num')
 
-ROOT_OUTPUT_DIR = FLAGS.dataset_dir_path + '/models/keras_impl/'
+ROOT_OUTPUT_DIR = FLAGS.dataset_dir_path + '/models/keras_impl'
 
 REAL_OUTPUT_DIR = ROOT_OUTPUT_DIR + '/' + FLAGS.structure
 

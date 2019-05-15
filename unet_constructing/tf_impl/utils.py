@@ -3,6 +3,7 @@ import sys
 
 import numpy as np
 import tensorflow as tf
+from keras.preprocessing import image
 
 curPath = os.path.abspath(os.path.dirname(__file__))
 rootPath = os.path.split(curPath)[0]
@@ -235,7 +236,6 @@ def validate(unet):
 
 
 def test(unet):
-    import cv2
     test_image_filename_queue = tf.train.string_input_producer(
         string_tensor=tf.train.match_filenames_once(TEST_SET_PATH), num_epochs=1, shuffle=True)
     test_images, test_labels = read_image_batch(test_image_filename_queue, TEST_BATCH_SIZE)
@@ -269,7 +269,8 @@ def test(unet):
                                           )
                 sum_loss += loss
                 sum_acc += acc
-                cv2.imwrite(os.path.join(TEST_SAVE_DIR, '%d.png' % epoch), img[0] * 255)
+                img = img.reshape(OUTPUT_IMG_HEIGHT, OUTPUT_IMG_WIDTH, OUTPUT_IMG_CHANNEL)
+                image.save_img(os.path.join(TEST_SAVE_DIR, '%d.png' % epoch), img[0] * 255)
                 epoch += 1
                 if epoch % divisor == 0:
                     logging.info('num %d ,  accuracy: %.6f' % (epoch * TEST_BATCH_SIZE, acc))
@@ -282,8 +283,6 @@ def test(unet):
 
 
 def predict(unet, prediction_save_dir=PREDICTION_SAVE_DIR, ckpt_path=CKPT_PATH, original_img_path=ORIGINAL_IMG_DIR):
-    from keras.preprocessing import image
-    import numpy as np
     image_list = get_sorted_files(original_img_path, "png")
     logging.info("🚩️" + str(len(image_list)) + " images to be predicted, will be saved to " + prediction_save_dir)
     if not os.path.lexists(prediction_save_dir):
