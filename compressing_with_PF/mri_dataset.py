@@ -10,12 +10,12 @@ DEFAULT_DATA_DIR = DATASET_PATH + "/mri_pad_4/data"
 
 FLAGS = tf.flags.FLAGS
 tf.flags.DEFINE_string('data_dir', DEFAULT_DATA_DIR, 'dir of data used to train')
-tf.flags.DEFINE_integer('nb_classes', cal_np_unique_num(FLAGS.data_dir + "/data/validate_y.npy"), '# of classes')
-tf.flags.DEFINE_integer('nb_smpls_train', len(np.load(FLAGS.data_dir + "/data/train_x.npy")),
+tf.flags.DEFINE_integer('nb_classes', cal_np_unique_num(FLAGS.data_dir + "/validate_y.npy"), '# of classes')
+tf.flags.DEFINE_integer('nb_smpls_train', len(np.load(FLAGS.data_dir + "/train_x.npy")),
                         '# of samples for training')
-tf.flags.DEFINE_integer('nb_smpls_val', len(np.load(FLAGS.data_dir + "/data/validate_x.npy")),
+tf.flags.DEFINE_integer('nb_smpls_val', len(np.load(FLAGS.data_dir + "/validate_x.npy")),
                         '# of samples for validation')
-tf.flags.DEFINE_integer('nb_smpls_eval', len(np.load(FLAGS.data_dir + "/data/test_x.npy")),
+tf.flags.DEFINE_integer('nb_smpls_eval', len(np.load(FLAGS.data_dir + "/test_x.npy")),
                         '# of samples for evaluation')
 tf.flags.DEFINE_integer('batch_size', 1, 'batch size per GPU for training')
 tf.flags.DEFINE_integer('batch_size_eval', 1, 'batch size for evaluation')
