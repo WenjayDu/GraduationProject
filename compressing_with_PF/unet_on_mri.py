@@ -14,7 +14,6 @@ tf.flags.DEFINE_float('batch_size_norm', 1, 'normalization factor of batch size'
 tf.flags.DEFINE_float('momentum', 0.9, 'momentum coefficient')
 tf.flags.DEFINE_float('loss_w_dcy', 3e-4, 'weight decaying loss\'s coefficient')
 tf.flags.DEFINE_integer('epoch_num', 10, 'num of epoch')
-tf.flags.DEFINE_string('structure', 'original_with_BN', 'structure of the unet to use, like original/smaller')
 
 INPUT_HEIGHT, INPUT_WIDTH, INPUT_CHANNEL = eval(FLAGS.input_shape)
 CLASS_NUM = cal_np_unique_num(FLAGS.data_dir + "/validate_y.npy")
