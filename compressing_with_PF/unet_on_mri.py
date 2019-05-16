@@ -13,7 +13,6 @@ tf.flags.DEFINE_float('lrn_rate_init', 1e-1, 'initial learning rate')
 tf.flags.DEFINE_float('batch_size_norm', 1, 'normalization factor of batch size')
 tf.flags.DEFINE_float('momentum', 0.9, 'momentum coefficient')
 tf.flags.DEFINE_float('loss_w_dcy', 3e-4, 'weight decaying loss\'s coefficient')
-tf.flags.DEFINE_integer('epoch_num', 10, 'num of epoch')
 
 INPUT_HEIGHT, INPUT_WIDTH, INPUT_CHANNEL = eval(FLAGS.input_shape)
 CLASS_NUM = cal_np_unique_num(FLAGS.data_dir + "/validate_y.npy")
