@@ -19,7 +19,7 @@ class GlobalVar:
 def create_dir(directory):
     if not os.path.exists(directory):
         os.makedirs(directory)
-        logging.info("🚩Created directory:", directory)
+        logging.info("🚩Created directory: " + directory)
     return directory
 
 
