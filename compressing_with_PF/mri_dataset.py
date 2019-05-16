@@ -12,6 +12,7 @@ FLAGS = tf.flags.FLAGS
 tf.flags.DEFINE_string('data_dir', DEFAULT_DATA_DIR, 'dir of data used to train')
 tf.flags.DEFINE_string('input_shape', "[144, 112, 1]", 'shape of input data')
 tf.flags.DEFINE_string('structure', 'original_with_BN', 'structure of the unet to use, like original/smaller')
+tf.flags.DEFINE_string('log_dir', './logs', 'logging directory')
 tf.flags.DEFINE_integer('nb_classes', cal_np_unique_num(FLAGS.data_dir + "/validate_y.npy"), '# of classes')
 tf.flags.DEFINE_integer('nb_smpls_train', len(np.load(FLAGS.data_dir + "/train_x.npy")),
                         '# of samples for training')
