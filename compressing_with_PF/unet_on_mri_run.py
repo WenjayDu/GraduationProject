@@ -8,9 +8,7 @@ OUTPUT_DIR = GlobalPath.OUTPUT_PATH + "/compressing_with_PF"
 
 FLAGS = tf.flags.FLAGS
 tf.flags.DEFINE_string('log_dir', './logs', 'logging directory')
-tf.flags.DEFINE_string('structure', 'original_with_BN', 'structure of the unet to use, like original/smaller')
 tf.flags.DEFINE_boolean('enbl_multi_gpu', False, 'enable multi-GPU training')
-tf.flags.DEFINE_string('learner', 'full-prec', 'learner\'s name')
 tf.flags.DEFINE_string('exec_mode', 'train', 'execution mode: train / eval')
 tf.flags.DEFINE_boolean('debug', False, 'debugging information')
 

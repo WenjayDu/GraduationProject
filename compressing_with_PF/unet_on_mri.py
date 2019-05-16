@@ -1,3 +1,4 @@
+import sys
 import tensorflow as tf
 from nets.abstract_model_helper import AbstractModelHelper
 from utils.multi_gpu_wrapper import MultiGpuWrapper as mgw
@@ -5,20 +6,24 @@ from utils.lrn_rate_utils import setup_lrn_rate_piecewise_constant
 from compressing_with_PF.mri_dataset import MriDataset
 from compressing_with_PF.config import GlobalPath, cal_np_unique_num
 
-FLAGS = tf.flags.FLAGS
+sys.path.append(GlobalPath.PROJECT_PATH)
 
+# from unet_constructing.tf_impl_run import
+
+FLAGS = tf.flags.FLAGS
 tf.flags.DEFINE_float('nb_epochs_rat', 1.0, '# of training epochs\'s ratio')
 tf.flags.DEFINE_float('lrn_rate_init', 1e-1, 'initial learning rate')
 tf.flags.DEFINE_float('batch_size_norm', 1, 'normalization factor of batch size')
 tf.flags.DEFINE_float('momentum', 0.9, 'momentum coefficient')
 tf.flags.DEFINE_float('loss_w_dcy', 3e-4, 'weight decaying loss\'s coefficient')
 tf.flags.DEFINE_integer('epoch_num', 10, 'num of epoch')
+tf.flags.DEFINE_string('structure', 'original_with_BN', 'structure of the unet to use, like original/smaller')
 
 DATASET_PATH = GlobalPath.DATASET_PATH
 
-INPUT_HEIGHT = 144
-INPUT_WIDTH = 112
-INPUT_CHANNEL = 1
+INPUT_HEIGHT = FLAGS.input_shape[0]
+INPUT_WIDTH = FLAGS.input_shape[1]
+INPUT_CHANNEL = FLAGS.input_shape[2]
 CLASS_NUM = cal_np_unique_num(FLAGS.data_dir + "/validate_y.npy")
 
 
