@@ -1,11 +1,11 @@
-import sys
 import tensorflow as tf
-from nets.abstract_model_helper import AbstractModelHelper
-from utils.multi_gpu_wrapper import MultiGpuWrapper as mgw
-from utils.lrn_rate_utils import setup_lrn_rate_piecewise_constant
-from compressing_with_PF.mri_dataset import MriDataset
+
 from compressing_with_PF.config import GlobalPath, cal_np_unique_num
-from various_unets import (original_with_BN, original, smaller_with_BN, smaller)
+from compressing_with_PF.mri_dataset import MriDataset
+from compressing_with_PF.various_unets import (original_with_BN, original, smaller_with_BN, smaller)
+from nets.abstract_model_helper import AbstractModelHelper
+from utils.lrn_rate_utils import setup_lrn_rate_piecewise_constant
+from utils.multi_gpu_wrapper import MultiGpuWrapper as mgw
 
 FLAGS = tf.flags.FLAGS
 tf.flags.DEFINE_float('nb_epochs_rat', 1.0, '# of training epochs\'s ratio')
