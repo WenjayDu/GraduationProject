@@ -110,7 +110,7 @@ def forward_fn(inputs, data_format):
     print("❗now is at forward function")
 
     unet = choose_unet(FLAGS.structure)
-    return unet.forward_rn(inputs)
+    return unet.forward_fn(inputs)
 
 
 def choose_unet(structure_name):
