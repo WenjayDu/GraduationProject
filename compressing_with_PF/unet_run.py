@@ -1,7 +1,7 @@
 import traceback
 import tensorflow as tf
 from learners.learner_utils import create_learner
-from compressing_with_PF.unet_on_mri import ModelHelper
+from compressing_with_PF.unet import ModelHelper
 from compressing_with_PF.config import GlobalPath
 
 OUTPUT_DIR = GlobalPath.OUTPUT_PATH + "/compressing_with_PF"

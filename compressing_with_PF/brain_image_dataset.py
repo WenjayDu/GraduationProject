@@ -25,7 +25,7 @@ tf.flags.DEFINE_integer('batch_size', 1, 'batch size per GPU for training')
 tf.flags.DEFINE_integer('batch_size_eval', 1, 'batch size for evaluation')
 
 
-class MriDataset(AbstractDataset):
+class BrainImgDataset(AbstractDataset):
     """
     MRI dataset
     """
@@ -37,7 +37,7 @@ class MriDataset(AbstractDataset):
         """
 
         # initialize the base class
-        super(MriDataset, self).__init__(is_train)
+        super(BrainImgDataset, self).__init__(is_train)
 
         # setup paths to image & label files, and read in images & labels
         if is_train:

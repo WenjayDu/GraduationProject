@@ -1,7 +1,7 @@
 import tensorflow as tf
 
 from compressing_with_PF.config import GlobalPath, cal_np_unique_num
-from compressing_with_PF.mri_dataset import MriDataset
+from compressing_with_PF.brain_image_dataset import BrainImgDataset
 from compressing_with_PF.various_unets import (original_with_BN, original, smaller_with_BN, smaller)
 from nets.abstract_model_helper import AbstractModelHelper
 from utils.lrn_rate_utils import setup_lrn_rate_piecewise_constant
@@ -29,8 +29,8 @@ class ModelHelper(AbstractModelHelper):
         super(ModelHelper, self).__init__(data_format)
 
         # initialize training & evaluation subsets
-        self.dataset_train = MriDataset(is_train=True)
-        self.dataset_eval = MriDataset(is_train=False)
+        self.dataset_train = BrainImgDataset(is_train=True)
+        self.dataset_eval = BrainImgDataset(is_train=False)
 
     def build_dataset_train(self, enbl_trn_val_split=False):
         """Build the data subset for training, usually with data augmentation."""
