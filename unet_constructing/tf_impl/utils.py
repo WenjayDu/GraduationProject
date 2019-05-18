@@ -30,7 +30,6 @@ tf.flags.DEFINE_string('to_validate', default="yes", help='whether to validate, 
 tf.flags.DEFINE_string('to_test', default="yes", help='whether to test, yes/no')
 tf.flags.DEFINE_string('to_predict', default="yes", help='whether to predict, yes/no')
 tf.flags.DEFINE_string('input_shape', default="[144, 112, 1]", help='shape of input data')
-tf.flags.DEFINE_string('output_shape', default="[144, 112, 3]", help='shape of input data')
 
 # these flags are added because error is arisen for they undefined when importing this module from
 # data_processing.predict_with_models, therefore, define them here
@@ -57,7 +56,6 @@ PREDICTION_SAVE_DIR = REAL_OUTPUT_DIR + "/predictions"
 TEST_SAVE_DIR = REAL_OUTPUT_DIR + "/test_saved"
 
 INPUT_IMG_HEIGHT, INPUT_IMG_WIDTH, INPUT_IMG_CHANNEL = eval(FLAGS.input_shape)
-OUTPUT_IMG_HEIGHT, OUTPUT_IMG_WIDTH, OUTPUT_IMG_CHANNEL = eval(FLAGS.output_shape)
 
 TRAIN_BATCH_SIZE = FLAGS.train_batch_size
 VALIDATION_BATCH_SIZE = FLAGS.validation_batch_size
@@ -298,7 +296,7 @@ def predict(unet, prediction_save_dir=PREDICTION_SAVE_DIR, ckpt_path=CKPT_PATH, 
         all_parameters_saver.restore(sess=sess, save_path=ckpt_path)
         for index, image_path in enumerate(image_list):
             original_img = image.load_img(image_path,
-                                          target_size=(OUTPUT_IMG_HEIGHT, OUTPUT_IMG_WIDTH, OUTPUT_IMG_CHANNEL),
+                                          target_size=(INPUT_IMG_HEIGHT, INPUT_IMG_WIDTH, 3),
                                           color_mode="grayscale")
             original_img = image.img_to_array(original_img)
             img = np.expand_dims(original_img, axis=0)
@@ -311,7 +309,7 @@ def predict(unet, prediction_save_dir=PREDICTION_SAVE_DIR, ckpt_path=CKPT_PATH, 
                                      )
             # save_path = os.path.join(prediction_save_dir, '%d.png' % index)
             # predict_with_models.to_hot_cmap(predict_image, save_path, argmax_axis=3)
-            predict_image = predict_image.reshape(OUTPUT_IMG_HEIGHT, OUTPUT_IMG_WIDTH, OUTPUT_IMG_CHANNEL)
+            predict_image = predict_image.reshape(INPUT_IMG_HEIGHT, INPUT_IMG_WIDTH, 3)
             image.save_img(os.path.join(prediction_save_dir, '%d.png' % index), predict_image * 255)
             # cv2.imwrite(os.path.join(prediction_save_dir, '%d.png' % index), predict_image)
 
