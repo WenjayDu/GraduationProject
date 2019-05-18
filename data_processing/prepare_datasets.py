@@ -86,6 +86,11 @@ def prepare_dataset(dataset_name="mri", ratios=[0.75, 0.15], save_path=None):
     os.chdir(PROJECT_PATH)
     serialize_object(result, serialized_file)
     logging.info("🚩returned object of prepare_data() has been writen to " + serialized_file)
+    logging.info("🚩Num of train/validation/test samples in %s is %d/%d/%d respectively",
+                 save_path.split('/')[-1],
+                 result[1]["num_of_train_samples"],
+                 result[1]["num_of_validation_samples"],
+                 result[1]["num_of_test_samples"])
     logging.info("🚩Done preparing " + save_path + " dataset\n")
 
 
