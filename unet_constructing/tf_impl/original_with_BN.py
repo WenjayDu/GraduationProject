@@ -64,14 +64,14 @@ class UNet:
         with tf.name_scope('layer_1'):
             normed_batch = batch_norm(x=self.input_image, is_training=self.is_training, name='layer1_BN1')
             # conv_1
-            self.w[1] = self.init_w(shape=[3, 3, FLAGS.input_shape[2], 64 / FLAGS.divisor], name='w_1')
+            self.w[1] = self.init_w(shape=[3, 3, FLAGS.input_shape[2], int(64 / FLAGS.divisor)], name='w_1')
             conv_1_result = tf.nn.conv2d(
                 input=normed_batch, filter=self.w[1], strides=[1, 1, 1, 1], padding='SAME', name='conv_1')
             relu_1_result = tf.nn.relu(conv_1_result, name='relu_1')
 
             normed_batch = batch_norm(x=relu_1_result, is_training=self.is_training, name='layer1_BN2')
             # conv_2
-            self.w[2] = self.init_w(shape=[3, 3, 64 / FLAGS.divisor, 64 / FLAGS.divisor], name='w_2')
+            self.w[2] = self.init_w(shape=[3, 3, int(64 / FLAGS.divisor), int(64 / FLAGS.divisor)], name='w_2')
             conv_2_result = tf.nn.conv2d(input=normed_batch, filter=self.w[2], strides=[1, 1, 1, 1],
                                          padding='SAME', name='conv_2')
             relu_2_result = tf.nn.relu(features=conv_2_result, name='relu_2')
@@ -85,14 +85,14 @@ class UNet:
         with tf.name_scope('layer_2'):
             normed_batch = batch_norm(x=maxpool_result, is_training=self.is_training, name='layer2_BN1')
             # conv_1
-            self.w[3] = self.init_w(shape=[3, 3, 64 / FLAGS.divisor, 128 / FLAGS.divisor], name='w_3')
+            self.w[3] = self.init_w(shape=[3, 3, int(64 / FLAGS.divisor), int(128 / FLAGS.divisor)], name='w_3')
             conv_1_result = tf.nn.conv2d(input=normed_batch, filter=self.w[3], strides=[1, 1, 1, 1],
                                          padding='SAME', name='conv_1')
             relu_1_result = tf.nn.relu(features=conv_1_result, name='relu_1')
 
             normed_batch = batch_norm(x=relu_1_result, is_training=self.is_training, name='layer2_BN2')
             # conv_2
-            self.w[4] = self.init_w(shape=[3, 3, 128 / FLAGS.divisor, 128 / FLAGS.divisor], name='w_4')
+            self.w[4] = self.init_w(shape=[3, 3, int(128 / FLAGS.divisor), int(128 / FLAGS.divisor)], name='w_4')
             conv_2_result = tf.nn.conv2d(input=normed_batch, filter=self.w[4], strides=[1, 1, 1, 1],
                                          padding='SAME', name='conv_2')
             relu_2_result = tf.nn.relu(features=conv_2_result, name='relu_2')
@@ -106,14 +106,14 @@ class UNet:
         with tf.name_scope('layer_3'):
             normed_batch = batch_norm(x=maxpool_result, is_training=self.is_training, name='layer3_BN1')
             # conv_1
-            self.w[5] = self.init_w(shape=[3, 3, 128 / FLAGS.divisor, 256 / FLAGS.divisor], name='w_5')
+            self.w[5] = self.init_w(shape=[3, 3, int(128 / FLAGS.divisor), int(256 / FLAGS.divisor)], name='w_5')
             conv_1_result = tf.nn.conv2d(input=normed_batch, filter=self.w[5], strides=[1, 1, 1, 1],
                                          padding='SAME', name='conv_1')
             relu_1_result = tf.nn.relu(features=conv_1_result, name='relu_1')
 
             normed_batch = batch_norm(x=relu_1_result, is_training=self.is_training, name='layer3_BN2')
             # conv_2
-            self.w[6] = self.init_w(shape=[3, 3, 256 / FLAGS.divisor, 256 / FLAGS.divisor], name='w_6')
+            self.w[6] = self.init_w(shape=[3, 3, int(256 / FLAGS.divisor), int(256 / FLAGS.divisor)], name='w_6')
             conv_2_result = tf.nn.conv2d(input=normed_batch, filter=self.w[6], strides=[1, 1, 1, 1],
                                          padding='SAME', name='conv_2')
             relu_2_result = tf.nn.relu(features=conv_2_result, name='relu_2')
@@ -128,14 +128,14 @@ class UNet:
         with tf.name_scope('layer_4'):
             normed_batch = batch_norm(x=maxpool_result, is_training=self.is_training, name='layer4_BN1')
             # conv_1
-            self.w[7] = self.init_w(shape=[3, 3, 256 / FLAGS.divisor, 512 / FLAGS.divisor], name='w_7')
+            self.w[7] = self.init_w(shape=[3, 3, int(256 / FLAGS.divisor), int(512 / FLAGS.divisor)], name='w_7')
             conv_1_result = tf.nn.conv2d(input=normed_batch, filter=self.w[7], strides=[1, 1, 1, 1],
                                          padding='SAME', name='conv_1')
             relu_1_result = tf.nn.relu(features=conv_1_result, name='relu_1')
 
             normed_batch = batch_norm(x=relu_1_result, is_training=self.is_training, name='layer4_BN2')
             # conv_2
-            self.w[8] = self.init_w(shape=[3, 3, 512 / FLAGS.divisor, 512 / FLAGS.divisor], name='w_8')
+            self.w[8] = self.init_w(shape=[3, 3, int(512 / FLAGS.divisor), int(512 / FLAGS.divisor)], name='w_8')
             conv_2_result = tf.nn.conv2d(input=normed_batch, filter=self.w[8], strides=[1, 1, 1, 1],
                                          padding='SAME', name='conv_2')
             relu_2_result = tf.nn.relu(features=conv_2_result, name='relu_2')
@@ -151,23 +151,23 @@ class UNet:
         with tf.name_scope('layer_5'):
             normed_batch = batch_norm(x=maxpool_result, is_training=self.is_training, name='layer5_BN1')
             # conv_1
-            self.w[9] = self.init_w(shape=[3, 3, 512 / FLAGS.divisor, 1024 / FLAGS.divisor], name='w_9')
+            self.w[9] = self.init_w(shape=[3, 3, int(512 / FLAGS.divisor), int(1024 / FLAGS.divisor)], name='w_9')
             conv_1_result = tf.nn.conv2d(input=normed_batch, filter=self.w[9], strides=[1, 1, 1, 1],
                                          padding='SAME', name='conv_1')
             relu_1_result = tf.nn.relu(features=conv_1_result, name='relu_1')
 
             normed_batch = batch_norm(x=relu_1_result, is_training=self.is_training, name='layer5_BN2')
             # conv_2
-            self.w[10] = self.init_w(shape=[3, 3, 1024 / FLAGS.divisor, 1024 / FLAGS.divisor], name='w_10')
+            self.w[10] = self.init_w(shape=[3, 3, int(1024 / FLAGS.divisor), int(1024 / FLAGS.divisor)], name='w_10')
             conv_2_result = tf.nn.conv2d(input=normed_batch, filter=self.w[10], strides=[1, 1, 1, 1],
                                          padding='SAME', name='conv_2')
             relu_2_result = tf.nn.relu(features=conv_2_result, name='relu_2')
 
             # up_sampling
-            self.w[11] = self.init_w(shape=[2, 2, 512 / FLAGS.divisor, 1024 / FLAGS.divisor], name='w_11')
+            self.w[11] = self.init_w(shape=[2, 2, int(512 / FLAGS.divisor), int(1024 / FLAGS.divisor)], name='w_11')
             result_up = tf.nn.conv2d_transpose(value=relu_2_result, filter=self.w[11], strides=[1, 2, 2, 1],
                                                output_shape=[batch_size, int(relu_2_result.shape[1]) * 2,
-                                                             int(relu_2_result.shape[2]) * 2, 512 / FLAGS.divisor],
+                                                             int(relu_2_result.shape[2]) * 2, int(512 / FLAGS.divisor)],
                                                padding='VALID', name='Up_Sampling')
             relu_3_result = tf.nn.relu(features=result_up, name='relu_3')
 
@@ -179,21 +179,21 @@ class UNet:
                 result_from_contracting=self.result_from_contracting[4], result_from_upsampling=relu_3_result)
 
             # conv_1
-            self.w[12] = self.init_w(shape=[3, 3, 1024 / FLAGS.divisor, 512 / FLAGS.divisor], name='w_12')
+            self.w[12] = self.init_w(shape=[3, 3, int(1024 / FLAGS.divisor), int(512 / FLAGS.divisor)], name='w_12')
             conv_1_result = tf.nn.conv2d(input=result_merge, filter=self.w[12], strides=[1, 1, 1, 1],
                                          padding='SAME', name='conv_1')
             relu_1_result = tf.nn.relu(features=conv_1_result, name='relu_1')
             # conv_2
-            self.w[13] = self.init_w(shape=[3, 3, 512 / FLAGS.divisor, 512 / FLAGS.divisor], name='w_10')
+            self.w[13] = self.init_w(shape=[3, 3, int(512 / FLAGS.divisor), int(512 / FLAGS.divisor)], name='w_10')
             conv_2_result = tf.nn.conv2d(input=relu_1_result, filter=self.w[13], strides=[1, 1, 1, 1],
                                          padding='SAME', name='conv_2')
             relu_2_result = tf.nn.relu(features=conv_2_result, name='relu_2')
 
             # up_sampling
-            self.w[14] = self.init_w(shape=[2, 2, 256 / FLAGS.divisor, 512 / FLAGS.divisor], name='w_11')
+            self.w[14] = self.init_w(shape=[2, 2, int(256 / FLAGS.divisor), int(512 / FLAGS.divisor)], name='w_11')
             result_up = tf.nn.conv2d_transpose(value=relu_2_result, filter=self.w[14], strides=[1, 2, 2, 1],
                                                output_shape=[batch_size, int(relu_2_result.shape[1]) * 2,
-                                                             int(relu_2_result.shape[2]) * 2, 256 / FLAGS.divisor],
+                                                             int(relu_2_result.shape[2]) * 2, int(256 / FLAGS.divisor)],
                                                padding='VALID', name='Up_Sampling')
             relu_3_result = tf.nn.relu(features=result_up, name='relu_3')
 
@@ -204,21 +204,21 @@ class UNet:
                 result_from_contracting=self.result_from_contracting[3], result_from_upsampling=relu_3_result)
 
             # conv_1
-            self.w[15] = self.init_w(shape=[3, 3, 512 / FLAGS.divisor, 256 / FLAGS.divisor], name='w_12')
+            self.w[15] = self.init_w(shape=[3, 3, int(512 / FLAGS.divisor), int(256 / FLAGS.divisor)], name='w_12')
             conv_1_result = tf.nn.conv2d(input=result_merge, filter=self.w[15], strides=[1, 1, 1, 1],
                                          padding='SAME', name='conv_1')
             relu_1_result = tf.nn.relu(features=conv_1_result, name='relu_1')
             # conv_2
-            self.w[16] = self.init_w(shape=[3, 3, 256 / FLAGS.divisor, 256 / FLAGS.divisor], name='w_10')
+            self.w[16] = self.init_w(shape=[3, 3, int(256 / FLAGS.divisor), int(256 / FLAGS.divisor)], name='w_10')
             conv_2_result = tf.nn.conv2d(input=relu_1_result, filter=self.w[16], strides=[1, 1, 1, 1],
                                          padding='SAME', name='conv_2')
             relu_2_result = tf.nn.relu(features=conv_2_result, name='relu_2')
 
             # up_sampling
-            self.w[17] = self.init_w(shape=[2, 2, 128 / FLAGS.divisor, 256 / FLAGS.divisor], name='w_11')
+            self.w[17] = self.init_w(shape=[2, 2, int(128 / FLAGS.divisor), int(256 / FLAGS.divisor)], name='w_11')
             result_up = tf.nn.conv2d_transpose(value=relu_2_result, filter=self.w[17], strides=[1, 2, 2, 1],
                                                output_shape=[batch_size, int(relu_2_result.shape[1]) * 2,
-                                                             int(relu_2_result.shape[2]) * 2, 128 / FLAGS.divisor],
+                                                             int(relu_2_result.shape[2]) * 2, int(128 / FLAGS.divisor)],
                                                padding='VALID', name='Up_Sampling')
             relu_3_result = tf.nn.relu(features=result_up, name='relu_3')
 
@@ -229,21 +229,21 @@ class UNet:
                 result_from_contracting=self.result_from_contracting[2], result_from_upsampling=relu_3_result)
 
             # conv_1
-            self.w[18] = self.init_w(shape=[3, 3, 256 / FLAGS.divisor, 128 / FLAGS.divisor], name='w_12')
+            self.w[18] = self.init_w(shape=[3, 3, int(256 / FLAGS.divisor), int(128 / FLAGS.divisor)], name='w_12')
             conv_1_result = tf.nn.conv2d(input=result_merge, filter=self.w[18], strides=[1, 1, 1, 1],
                                          padding='SAME', name='conv_1')
             relu_1_result = tf.nn.relu(features=conv_1_result, name='relu_1')
             # conv_2
-            self.w[19] = self.init_w(shape=[3, 3, 128 / FLAGS.divisor, 128 / FLAGS.divisor], name='w_10')
+            self.w[19] = self.init_w(shape=[3, 3, int(128 / FLAGS.divisor), int(128 / FLAGS.divisor)], name='w_10')
             conv_2_result = tf.nn.conv2d(input=relu_1_result, filter=self.w[19], strides=[1, 1, 1, 1],
                                          padding='SAME', name='conv_2')
             relu_2_result = tf.nn.relu(features=conv_2_result, name='relu_2')
 
             # up_sampling
-            self.w[20] = self.init_w(shape=[2, 2, 64 / FLAGS.divisor, 128 / FLAGS.divisor], name='w_11')
+            self.w[20] = self.init_w(shape=[2, 2, int(64 / FLAGS.divisor), int(128 / FLAGS.divisor)], name='w_11')
             result_up = tf.nn.conv2d_transpose(value=relu_2_result, filter=self.w[20], strides=[1, 2, 2, 1],
                                                output_shape=[batch_size, int(relu_2_result.shape[1]) * 2,
-                                                             int(relu_2_result.shape[2]) * 2, 64 / FLAGS.divisor],
+                                                             int(relu_2_result.shape[2]) * 2, int(64 / FLAGS.divisor)],
                                                padding='VALID', name='Up_Sampling')
             relu_3_result = tf.nn.relu(features=result_up, name='relu_3')
 
@@ -254,18 +254,18 @@ class UNet:
                 result_from_contracting=self.result_from_contracting[1], result_from_upsampling=relu_3_result)
 
             # conv_1
-            self.w[21] = self.init_w(shape=[3, 3, 128 / FLAGS.divisor, 64 / FLAGS.divisor], name='w_12')
+            self.w[21] = self.init_w(shape=[3, 3, int(128 / FLAGS.divisor), int(64 / FLAGS.divisor)], name='w_12')
             conv_1_result = tf.nn.conv2d(input=result_merge, filter=self.w[21], strides=[1, 1, 1, 1],
                                          padding='SAME', name='conv_1')
             relu_1_result = tf.nn.relu(features=conv_1_result, name='relu_1')
             # conv_2
-            self.w[22] = self.init_w(shape=[3, 3, 64 / FLAGS.divisor, 64 / FLAGS.divisor], name='w_10')
+            self.w[22] = self.init_w(shape=[3, 3, int(64 / FLAGS.divisor), int(64 / FLAGS.divisor)], name='w_10')
             conv_2_result = tf.nn.conv2d(input=relu_1_result, filter=self.w[22], strides=[1, 1, 1, 1],
                                          padding='SAME', name='conv_2')
             relu_2_result = tf.nn.relu(features=conv_2_result, name='relu_2')
 
             # convolution to [batch_size, OUTPIT_IMG_WIDE, OUTPUT_IMG_HEIGHT, CLASS_NUM]
-            self.w[23] = self.init_w(shape=[1, 1, 64 / FLAGS.divisor, 3], name='w_11')
+            self.w[23] = self.init_w(shape=[1, 1, int(64 / FLAGS.divisor), 3], name='w_11')
             result_conv_3 = tf.nn.conv2d(input=relu_2_result, filter=self.w[23], strides=[1, 1, 1, 1],
                                          padding='VALID', name='conv_3')
             self.prediction = result_conv_3
