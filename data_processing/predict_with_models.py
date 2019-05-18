@@ -66,7 +66,7 @@ def predict_with_keras_model(model_path, img_path, input_shape, prediction_save_
             original_img = image.img_to_array(original_img)
             img = np.expand_dims(original_img, axis=0)
             prediction = model.predict(img)
-            prediction = prediction.reshape(img_size)
+            prediction = prediction.reshape(input_shape)
             image.save_img(os.path.join(prediction_save_dir, '%d.png' % index), prediction * 255)
         logging.info("🚩️Predictions are saved, now converting them to 'hot' color map")
         to_hot_cmap(prediction_save_dir)
@@ -87,6 +87,8 @@ def predict_with_tf_model(ckpt_path, structure, img_path, prediction_save_dir=No
     logging.info("🚩️start predicting...")
     if prediction_save_dir is None:
         prediction_save_dir = get_dir_containing_file(ckpt_path) + "/predictions"
+    if not os.path.exists(prediction_save_dir):
+        os.makedirs(prediction_save_dir)
     predict(unet, ckpt_path=ckpt_path, original_img_path=img_path, prediction_save_dir=prediction_save_dir)
 
 
