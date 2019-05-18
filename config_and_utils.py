@@ -16,6 +16,13 @@ class GlobalVar:
     OUTPUT_PATH = PROJECT_PATH + "/output"
 
 
+def get_file_size(file_path):
+    """
+    get file size, unit is MiB
+    """
+    return os.path.getsize(file_path) / 1024 / 1024
+
+
 def create_dir(directory):
     if not os.path.exists(directory):
         os.makedirs(directory)
