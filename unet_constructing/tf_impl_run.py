@@ -8,7 +8,7 @@ sys.path.append(rootPath)
 from module_minc_keras.minc_keras import *
 from data_processing import convert_npy_to_tfrecords
 from unet_constructing.tf_impl.utils import *
-from unet_constructing.tf_impl import (original, original_with_BN, smaller, smaller_with_BN)
+from unet_constructing.tf_impl import (original, original_with_BN)
 
 FLAGS = tf.flags.FLAGS
 
@@ -16,9 +16,7 @@ FLAGS = tf.flags.FLAGS
 def choose_unet(structure_name=FLAGS.structure):
     switcher = {
         "original": original.UNet(),
-        "original_with_BN": original_with_BN.UNet(),
-        "smaller": smaller.UNet(),
-        "smaller_with_BN": smaller_with_BN.UNet()
+        "original_with_BN": original_with_BN.UNet()
     }
     return switcher.get(structure_name)
 

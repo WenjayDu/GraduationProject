@@ -11,7 +11,7 @@ sys.path.append(rootPath)
 import pickle
 from config_and_utils import GlobalVar, logging
 from module_minc_keras.minc_keras import *
-from unet_constructing.keras_impl import (original, original_with_BN, smaller, smaller_with_BN)
+from unet_constructing.keras_impl import (original, original_with_BN)
 
 FLAGS = tf.flags.FLAGS
 tf.flags.DEFINE_string(name='dataset_dir_path', default=GlobalVar.DATASET_PATH + "/mri_pad_4",
@@ -19,10 +19,12 @@ tf.flags.DEFINE_string(name='dataset_dir_path', default=GlobalVar.DATASET_PATH +
 tf.flags.DEFINE_string(name='structure', default="original",
                        help="structure of U-Net you want to use, like original, smaller")
 tf.flags.DEFINE_integer(name='epoch_num', default=3, help='epoch num')
+tf.flags.DEFINE_integer(name='divisor', default=1,
+                        help='divisor of the number of filters, must be a factor of 64')
 
 ROOT_OUTPUT_DIR = FLAGS.dataset_dir_path + '/models/keras_impl'
 
-REAL_OUTPUT_DIR = ROOT_OUTPUT_DIR + '/' + FLAGS.structure
+REAL_OUTPUT_DIR = ROOT_OUTPUT_DIR + '/' + FLAGS.structure + '_divisor_' + FLAGS.divisor
 
 LOGS_DIR = REAL_OUTPUT_DIR + "/logs"
 MODEL_SAVE_DIR = REAL_OUTPUT_DIR + "/saved_model"
@@ -32,8 +34,6 @@ def choose_unet(structure_name=FLAGS.structure):
     switcher = {
         "original": original.UNet(),
         "original_with_BN": original_with_BN.UNet(),
-        "smaller": smaller.UNet(),
-        "smaller_with_BN": smaller_with_BN.UNet()
     }
     return switcher.get(structure_name)
 

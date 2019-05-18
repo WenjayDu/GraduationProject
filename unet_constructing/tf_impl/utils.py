@@ -17,11 +17,13 @@ tf.flags.DEFINE_string(name='dataset_dir_path', default=GlobalVar.DATASET_PATH +
                        help='path of the dataset dir you want to use')
 tf.flags.DEFINE_string(name='structure', default="original",
                        help="structure of U-Net you want to use, like original, smaller")
+tf.flags.DEFINE_integer(name='divisor', default=1,
+                        help='divisor of the number of filters, must be a factor of 64')
 tf.flags.DEFINE_integer(name='epoch_num', default=3, help='epoch num')
 
-tf.flags.DEFINE_integer('train_batch_size', default=8, help='train batch size')
-tf.flags.DEFINE_integer('validation_batch_size', default=8, help='validation batch size')
-tf.flags.DEFINE_integer('test_batch_size', default=8, help='test batch size')
+tf.flags.DEFINE_integer('train_batch_size', default=64, help='train batch size')
+tf.flags.DEFINE_integer('validation_batch_size', default=64, help='validation batch size')
+tf.flags.DEFINE_integer('test_batch_size', default=64, help='test batch size')
 
 tf.flags.DEFINE_string('to_train', default="yes", help='whether to train, yes/no')
 tf.flags.DEFINE_string('to_validate', default="yes", help='whether to validate, yes/on')
@@ -37,7 +39,7 @@ tf.flags.DEFINE_integer(name="port", default=65533, help="just to avoid err")
 tf.flags.DEFINE_string(name="f", default="", help="kernel")
 
 ROOT_OUTPUT_DIR = FLAGS.dataset_dir_path + '/models/tf_impl'
-REAL_OUTPUT_DIR = ROOT_OUTPUT_DIR + '/' + FLAGS.structure
+REAL_OUTPUT_DIR = ROOT_OUTPUT_DIR + '/' + FLAGS.structure + '_divisor_' + FLAGS.divisor
 
 LOG_DIR = REAL_OUTPUT_DIR + "/logs"
 MODEL_SAVE_DIR = REAL_OUTPUT_DIR + "/saved_model"
@@ -269,8 +271,6 @@ def test(unet):
                                           )
                 sum_loss += loss
                 sum_acc += acc
-                img = img.reshape(OUTPUT_IMG_HEIGHT, OUTPUT_IMG_WIDTH, OUTPUT_IMG_CHANNEL)
-                image.save_img(os.path.join(TEST_SAVE_DIR, '%d.png' % epoch), img[0] * 255)
                 epoch += 1
                 if epoch % divisor == 0:
                     logging.info('num %d ,  accuracy: %.6f' % (epoch * TEST_BATCH_SIZE, acc))
