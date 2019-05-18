@@ -130,7 +130,7 @@ def create_gif(gif_name, dir_path, duration=0.25):
     :return:
     """
     import imageio
-    if gif_name.split(".")[-1] is not "gif":
+    if gif_name.split(".")[-1] != "gif":
         gif_name = gif_name + ".gif"
     frames = []
     image_list = get_sorted_files(dir_path, "png")
