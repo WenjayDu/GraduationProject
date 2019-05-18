@@ -39,7 +39,7 @@ tf.flags.DEFINE_integer(name="port", default=65533, help="just to avoid err")
 tf.flags.DEFINE_string(name="f", default="", help="kernel")
 
 ROOT_OUTPUT_DIR = FLAGS.dataset_dir_path + '/models/tf_impl'
-ID = FLAGS.structure + '_divisor_' + FLAGS.divisor
+ID = FLAGS.structure + '_divisor_' + str(FLAGS.divisor)
 
 REAL_OUTPUT_DIR = ROOT_OUTPUT_DIR + '/' + ID
 
