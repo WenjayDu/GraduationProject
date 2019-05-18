@@ -29,8 +29,8 @@ tf.flags.DEFINE_string('to_train', default="yes", help='whether to train, yes/no
 tf.flags.DEFINE_string('to_validate', default="yes", help='whether to validate, yes/on')
 tf.flags.DEFINE_string('to_test', default="yes", help='whether to test, yes/no')
 tf.flags.DEFINE_string('to_predict', default="yes", help='whether to predict, yes/no')
-tf.flags.DEFINE_list('input_shape', default=[144, 112, 1], help='shape of input data')
-tf.flags.DEFINE_list('output_shape', default=[144, 112, 3], help='shape of input data')
+tf.flags.DEFINE_string('input_shape', default="[144, 112, 1]", help='shape of input data')
+tf.flags.DEFINE_string('output_shape', default="[144, 112, 3]", help='shape of input data')
 
 # these flags are added because error is arisen for they undefined when importing this module from
 # data_processing.predict_with_models, therefore, define them here
@@ -56,8 +56,8 @@ ORIGINAL_IMG_DIR = DATASET_DIR + "/examples/extracted_images/sub-00031_task-01_s
 PREDICTION_SAVE_DIR = REAL_OUTPUT_DIR + "/predictions"
 TEST_SAVE_DIR = REAL_OUTPUT_DIR + "/test_saved"
 
-[INPUT_IMG_HEIGHT, INPUT_IMG_WIDTH, INPUT_IMG_CHANNEL] = FLAGS.input_shape
-[OUTPUT_IMG_HEIGHT, OUTPUT_IMG_WIDTH, OUTPUT_IMG_CHANNEL] = FLAGS.output_shape
+INPUT_IMG_HEIGHT, INPUT_IMG_WIDTH, INPUT_IMG_CHANNEL = eval(FLAGS.input_shape)
+OUTPUT_IMG_HEIGHT, OUTPUT_IMG_WIDTH, OUTPUT_IMG_CHANNEL = eval(FLAGS.output_shape)
 
 TRAIN_BATCH_SIZE = FLAGS.train_batch_size
 VALIDATION_BATCH_SIZE = FLAGS.validation_batch_size
@@ -93,7 +93,7 @@ def read_image(file_queue, shape):
 
 
 def read_image_batch(file_queue, batch_size):
-    img, label = read_image(file_queue, shape=FLAGS.input_shape)
+    img, label = read_image(file_queue, shape=[INPUT_IMG_HEIGHT, INPUT_IMG_WIDTH, INPUT_IMG_CHANNEL])
     min_after_dequeue = 500
     capacity = 510
     # image_batch, label_batch = tf.train.batch([img, label], batch_size=batch_size, capacity=capacity, num_threads=10)

@@ -8,6 +8,7 @@ sys.path.append(rootPath)
 from unet_constructing.tf_impl.utils import *
 
 FLAGS = tf.flags.FLAGS
+INPUT_IMG_HEIGHT, INPUT_IMG_WIDTH, INPUT_IMG_CHANNEL = eval(FLAGS.input_shape)
 
 
 class UNet:
@@ -42,11 +43,11 @@ class UNet:
         with tf.name_scope('input'):
             self.input_image = tf.placeholder(
                 dtype=tf.float32,
-                shape=[batch_size, FLAGS.input_shape[0], FLAGS.input_shape[1], FLAGS.input_shape[2]],
+                shape=[batch_size, INPUT_IMG_HEIGHT, INPUT_IMG_WIDTH, INPUT_IMG_CHANNEL],
                 name='input_images'
             )
             self.input_label = tf.placeholder(
-                dtype=tf.int32, shape=[batch_size, FLAGS.input_shape[0], FLAGS.input_shape[1], FLAGS.input_shape[2]],
+                dtype=tf.int32, shape=[batch_size, INPUT_IMG_HEIGHT, INPUT_IMG_WIDTH, INPUT_IMG_CHANNEL],
                 name='input_labels'
             )
 
@@ -64,7 +65,7 @@ class UNet:
         with tf.name_scope('layer_1'):
             normed_batch = batch_norm(x=self.input_image, is_training=self.is_training, name='layer1_BN1')
             # conv_1
-            self.w[1] = self.init_w(shape=[3, 3, FLAGS.input_shape[2], int(64 / FLAGS.divisor)], name='w_1')
+            self.w[1] = self.init_w(shape=[3, 3, INPUT_IMG_CHANNEL, int(64 / FLAGS.divisor)], name='w_1')
             conv_1_result = tf.nn.conv2d(
                 input=normed_batch, filter=self.w[1], strides=[1, 1, 1, 1], padding='SAME', name='conv_1')
             relu_1_result = tf.nn.relu(conv_1_result, name='relu_1')
@@ -272,7 +273,7 @@ class UNet:
 
         # softmax loss
         with tf.name_scope('softmax_loss'):
-            self.input_label = tf.reshape(self.input_label, [batch_size, FLAGS.input_shape[0], FLAGS.input_shape[1]])
+            self.input_label = tf.reshape(self.input_label, [batch_size, INPUT_IMG_HEIGHT, INPUT_IMG_WIDTH])
             self.loss = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=self.input_label,
                                                                        logits=self.prediction,
                                                                        name='loss')
