@@ -239,7 +239,8 @@ class UNet:
             relu_2_result = tf.nn.relu(features=conv_2_result, name='relu_2')
 
             # up_sampling
-            self.w[20] = self.init_w(shape=[2, 2, 64, 128], name='kernel', scope_name="Up_Sampling_8")
+            self.w[20] = self.init_w(shape=[2, 2, int(64 / FLAGS.divisor), int(128 / FLAGS.divisor)], name='kernel',
+                                     scope_name="Up_Sampling_8")
             result_up = tf.nn.conv2d_transpose(value=relu_2_result, filter=self.w[20], strides=[1, 2, 2, 1],
                                                output_shape=[batch_size, int(relu_2_result.shape[1]) * 2,
                                                              int(relu_2_result.shape[2]) * 2, int(64 / FLAGS.divisor)],
