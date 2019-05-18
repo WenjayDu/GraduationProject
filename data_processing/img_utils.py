@@ -97,7 +97,7 @@ def extract_img(minc_file=None, save_path=None):
     """
 
     if minc_file is None:
-        print("U should give out the path of a minc file")
+        logging.info("🚩U should give out the path of a minc file")
         return 1
     if save_path is None:
         save_path = SAVE_PATH
@@ -117,7 +117,7 @@ def extract_img(minc_file=None, save_path=None):
         filename = save_dir + '/' + str(i) + '.png'
         image.save_img(filename, data)
     minc_file.close()
-    print("🚩Extracted images have been saved to " + save_dir)
+    logging.info("🚩Extracted images have been saved to " + save_dir)
 
 
 def create_gif(gif_name, dir_path, duration=0.25):

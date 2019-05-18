@@ -46,12 +46,11 @@ def safe_load_model(model_path):
         sys.exit(1)
 
 
-def predict_with_keras_model(model_path, img_path, img_size, prediction_save_dir=None):
-    print(img_path)
-    if type(img_size) == tuple:
-        img_size = list(img_size)
-    if img_size.__len__() == 2:
-        img_size = img_size + [3]
+def predict_with_keras_model(model_path, img_path, input_shape, prediction_save_dir=None):
+    if type(input_shape) == tuple:
+        input_shape = list(input_shape)
+    if input_shape.__len__() == 2:
+        input_shape = input_shape + [3]
     if prediction_save_dir is None:
         prediction_save_dir = get_dir_containing_file(model_path) + "/predictions"
     if not os.path.exists(prediction_save_dir):
@@ -63,7 +62,7 @@ def predict_with_keras_model(model_path, img_path, img_size, prediction_save_dir
         image_list = get_sorted_files(img_path, "png")
         logging.info("🚩️" + str(len(image_list)) + " images to be predicted, will be saved to " + prediction_save_dir)
         for index, image_path in enumerate(image_list):
-            original_img = image.load_img(image_path, target_size=img_size, color_mode="grayscale")
+            original_img = image.load_img(image_path, target_size=input_shape, color_mode="grayscale")
             original_img = image.img_to_array(original_img)
             img = np.expand_dims(original_img, axis=0)
             prediction = model.predict(img)
@@ -73,7 +72,7 @@ def predict_with_keras_model(model_path, img_path, img_size, prediction_save_dir
         to_hot_cmap(prediction_save_dir)
         logging.warning('❗️Done prediction')
     else:
-        img = image.load_img(img_path, target_size=img_size, color_mode="grayscale")
+        img = image.load_img(img_path, target_size=input_shape, color_mode="grayscale")
         img_array = image.img_to_array(img)
         img_array = np.expand_dims(img_array, axis=0)
         # get prediction
@@ -98,5 +97,5 @@ if __name__ == "__main__":
     if not os.path.exists(TF_PREDICTION_SAVE_DIR):
         os.makedirs(TF_PREDICTION_SAVE_DIR)
         logging.warning("❗️Creating non-existent dir" + TF_PREDICTION_SAVE_DIR)
-    predict_with_keras_model(model_path=FLAGS.model_path, img_path=FLAGS.img_path, img_size=FLAGS.img_size)
+    predict_with_keras_model(model_path=FLAGS.model_path, img_path=FLAGS.img_path, input_shape=FLAGS.img_size)
     predict_with_tf_model(ckpt_path=FLAGS.ckpt_path, structure="original", img_path=FLAGS.img_path)
