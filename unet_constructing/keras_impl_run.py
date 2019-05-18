@@ -24,7 +24,8 @@ tf.flags.DEFINE_integer(name='divisor', default=1,
 
 ROOT_OUTPUT_DIR = FLAGS.dataset_dir_path + '/models/keras_impl'
 
-REAL_OUTPUT_DIR = ROOT_OUTPUT_DIR + '/' + FLAGS.structure + '_divisor_' + FLAGS.divisor
+ID = FLAGS.structure + '_divisor_' + FLAGS.divisor
+REAL_OUTPUT_DIR = ROOT_OUTPUT_DIR + '/' + ID
 
 LOGS_DIR = REAL_OUTPUT_DIR + "/logs"
 MODEL_SAVE_DIR = REAL_OUTPUT_DIR + "/saved_model"
@@ -79,7 +80,7 @@ def main():
                              epochs=FLAGS.epoch_num,
                              callbacks=[TensorBoard(log_dir=LOGS_DIR)])
     # save model
-    model_name = "model_of_" + FLAGS.structure + ".hdf5"
+    model_name = "model_of_" + ID + ".hdf5"
     model_save_path = MODEL_SAVE_DIR + '/' + model_name
     unet_model.save(model_save_path)
     # test model

@@ -39,11 +39,13 @@ tf.flags.DEFINE_integer(name="port", default=65533, help="just to avoid err")
 tf.flags.DEFINE_string(name="f", default="", help="kernel")
 
 ROOT_OUTPUT_DIR = FLAGS.dataset_dir_path + '/models/tf_impl'
-REAL_OUTPUT_DIR = ROOT_OUTPUT_DIR + '/' + FLAGS.structure + '_divisor_' + FLAGS.divisor
+ID = FLAGS.structure + '_divisor_' + FLAGS.divisor
+
+REAL_OUTPUT_DIR = ROOT_OUTPUT_DIR + '/' + ID
 
 LOG_DIR = REAL_OUTPUT_DIR + "/logs"
 MODEL_SAVE_DIR = REAL_OUTPUT_DIR + "/saved_model"
-CKPT_PATH = MODEL_SAVE_DIR + "/model_of_" + FLAGS.structure + ".ckpt"
+CKPT_PATH = MODEL_SAVE_DIR + "/model_of_" + ID + ".ckpt"
 
 DATASET_DIR = GlobalVar.DATASET_PATH
 
