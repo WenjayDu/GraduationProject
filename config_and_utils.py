@@ -20,6 +20,8 @@ def get_size(path):
     """
     get file、dir size, unit is MiB
     """
+    if not os.path.exists(path):
+        sys.exit("❌Error: Given path does not exist.")
     if os.path.isfile(path):
         return os.path.getsize(path) / 1024 / 1024
     elif os.path.isdir(path):
