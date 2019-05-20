@@ -106,9 +106,6 @@ def forward_fn(inputs, data_format):
     # tranpose the image tensor if needed
     if data_format == 'channel_first':
         inputs = tf.transpose(inputs, [0, 3, 1, 2])
-
-    print("❗now is at forward function")
-
     unet = choose_unet(FLAGS.structure)
     return unet.forward_fn(inputs)
 

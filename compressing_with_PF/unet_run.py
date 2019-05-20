@@ -8,7 +8,6 @@ OUTPUT_DIR = GlobalPath.OUTPUT_PATH + "/compressing_with_PF"
 
 FLAGS = tf.flags.FLAGS
 tf.flags.DEFINE_boolean('enbl_multi_gpu', False, 'enable multi-GPU training')
-tf.flags.DEFINE_string('exec_mode', 'train', 'execution mode: train / eval')
 tf.flags.DEFINE_boolean('debug', False, 'debugging information')
 
 

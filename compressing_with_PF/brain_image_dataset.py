@@ -15,6 +15,7 @@ tf.flags.DEFINE_string('structure', 'original_with_BN', 'structure of the unet t
 tf.flags.DEFINE_string('log_dir', './logs', 'logging directory')
 tf.flags.DEFINE_integer('epoch_num', 10, 'num of epoch')
 tf.flags.DEFINE_integer('divisor', 1, 'divisor of the number of filters, must be a factor of 64')
+tf.flags.DEFINE_string('exec_mode', 'train', 'execution mode: train / eval')
 tf.flags.DEFINE_integer('nb_classes', cal_np_unique_num(FLAGS.data_dir + "/validate_y.npy"), '# of classes')
 tf.flags.DEFINE_integer('nb_smpls_train', len(np.load(FLAGS.data_dir + "/train_x.npy")),
                         '# of samples for training')
@@ -64,10 +65,8 @@ class BrainImgDataset(AbstractDataset):
         """
 
         # create a tf.data.Dataset() object from NumPy arrays
-        print("🚩️now at MriDataset.build()")
         dataset = tf.data.Dataset.from_tensor_slices((self.images, self.labels))
         dataset = dataset.map(self.parse_fn, num_parallel_calls=FLAGS.nb_threads)
-        print("🚩️build(): creating iterators")
         # create iterators for training & validation subsets separately
         if self.is_train and enbl_trn_val_split:
             iterator_val = self.__make_iterator(dataset.take(FLAGS.nb_smpls_val))
@@ -85,13 +84,9 @@ class BrainImgDataset(AbstractDataset):
         * iterator: iterator for the dataset
         """
         dataset = dataset.apply(tf.contrib.data.shuffle_and_repeat(buffer_size=FLAGS.buffer_size))
-        print("🚩done shuffling and repeating")
         dataset = dataset.batch(self.batch_size)
-        print("🚩️done setting batch")
         dataset = dataset.prefetch(FLAGS.prefetch_size)
-        print("🚩done setting prefetch️")
         iterator = dataset.make_one_shot_iterator()
-        print("🚩done making iterator")
         return iterator
 
 
