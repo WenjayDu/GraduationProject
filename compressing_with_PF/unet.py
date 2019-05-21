@@ -51,22 +51,25 @@ class ModelHelper(AbstractModelHelper):
 
     def calc_loss(self, labels, outputs, trainable_vars):
         """Calculate loss (and some extra evaluation metrics)."""
-        labels = tf.reshape(labels, [INPUT_CHANNEL, INPUT_HEIGHT, INPUT_WIDTH])
-        outputs = tf.reshape(outputs, [INPUT_CHANNEL, INPUT_HEIGHT, INPUT_WIDTH, 3])
+        # labels = tf.reshape(labels, [FLAGS.batch_size, INPUT_HEIGHT, INPUT_WIDTH])
+        labels = tf.squeeze(labels, axis=3)
         labels = tf.cast(labels, tf.int32)
-        outputs = tf.cast(outputs, tf.float32)
         loss = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=labels, logits=outputs, name="loss")
-        # loss += FLAGS.loss_w_dcy * tf.add_n([tf.nn.l2_loss(var) for var in trainable_vars])
+        loss_filter = lambda var: 'batch_normalization' not in var.name
+        loss += FLAGS.loss_w_dcy * tf.add_n([tf.nn.l2_loss(var) for var in trainable_vars if loss_filter(var)])
         loss = tf.reduce_mean(loss)
-        accuracy = tf.reduce_mean(
-            tf.cast(tf.equal(tf.argmax(input=outputs, axis=3, output_type=tf.int32), labels), tf.float32))
+        accuracy = tf.reduce_mean(tf.cast(x=tf.equal(x=tf.argmax(input=outputs, axis=3, output_type=tf.int32),
+                                                     y=labels),
+                                          dtype=tf.float32))
         metrics = {'accuracy': accuracy}
+
+        ## faster, but acc is lower
+        # outputs = tf.reshape(tf.argmax(outputs, axis=3), [FLAGS.batch_size, INPUT_HEIGHT, INPUT_WIDTH, 1])
+        # outputs = tf.cast(outputs, tf.float32)
         # loss = tf.losses.softmax_cross_entropy(labels, outputs)
         # loss_filter = lambda var: 'batch_normalization' not in var.name
-        # loss += FLAGS.loss_w_dcy \
-        #         * tf.add_n([tf.nn.l2_loss(var) for var in trainable_vars if loss_filter(var)])
-        # accuracy = tf.reduce_mean(
-        #     tf.cast(tf.equal(tf.argmax(input=outputs, axis=3, output_type=tf.int32), labels), tf.float32))
+        # loss += FLAGS.loss_w_dcy * tf.add_n([tf.nn.l2_loss(var) for var in trainable_vars if loss_filter(var)])
+        # accuracy = tf.reduce_mean(tf.cast(tf.equal(outputs, labels), tf.float32))
         # metrics = {'accuracy': accuracy}
 
         return loss, metrics
