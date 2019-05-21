@@ -16,6 +16,8 @@ tf.flags.DEFINE_string('log_dir', './logs', 'logging directory')
 tf.flags.DEFINE_integer('epoch_num', 10, 'num of epoch')
 tf.flags.DEFINE_integer('divisor', 1, 'divisor of the number of filters, must be a factor of 64')
 tf.flags.DEFINE_string('exec_mode', 'train', 'execution mode: train / eval')
+tf.flags.DEFINE_integer('batch_size', 128, 'batch size per GPU for training')
+tf.flags.DEFINE_integer('batch_size_eval', 100, 'batch size for evaluation')
 tf.flags.DEFINE_integer('nb_classes', cal_np_unique_num(FLAGS.data_dir + "/validate_y.npy"), '# of classes')
 tf.flags.DEFINE_integer('nb_smpls_train', len(np.load(FLAGS.data_dir + "/train_x.npy")),
                         '# of samples for training')
@@ -23,8 +25,6 @@ tf.flags.DEFINE_integer('nb_smpls_val', len(np.load(FLAGS.data_dir + "/validate_
                         '# of samples for validation')
 tf.flags.DEFINE_integer('nb_smpls_eval', len(np.load(FLAGS.data_dir + "/test_x.npy")),
                         '# of samples for evaluation')
-tf.flags.DEFINE_integer('batch_size', 1, 'batch size per GPU for training')
-tf.flags.DEFINE_integer('batch_size_eval', 1, 'batch size for evaluation')
 
 
 class BrainImgDataset(AbstractDataset):
