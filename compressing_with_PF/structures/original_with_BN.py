@@ -7,46 +7,46 @@ INPUT_HEIGHT, INPUT_WIDTH, INPUT_CHANNEL = eval(FLAGS.input_shape)
 def forward_fn(inputs):
     # conv1
     with tf.name_scope('layer_1'):
-        BN1 = tf.keras.layers.BatchNormalization()(inputs)
+        BN1 = tf.keras.layers.BatchNormalization(name='batch_normalization1_1')(inputs)
         conv1 = tf.layers.conv2d(BN1, int(64 / FLAGS.divisor), 3, 1, activation=tf.nn.relu, name='conv1_1',
                                  padding="same")
-        BN1 = tf.keras.layers.BatchNormalization()(conv1)
+        BN1 = tf.keras.layers.BatchNormalization(name='batch_normalization1_2')(conv1)
         conv1 = tf.layers.conv2d(BN1, int(64 / FLAGS.divisor), 3, 1, activation=tf.nn.relu, name='conv1_2',
                                  padding="same")
         pool1 = tf.layers.max_pooling2d(conv1, pool_size=(2, 2), strides=(2, 2), name='pool1', padding="valid")
     # conv2
     with tf.name_scope('layer_2'):
-        BN2 = tf.keras.layers.BatchNormalization()(pool1)
+        BN2 = tf.keras.layers.BatchNormalization(name='batch_normalization2_1')(pool1)
         conv2 = tf.layers.conv2d(BN2, int(128 / FLAGS.divisor), 3, 1, activation=tf.nn.relu, name='conv2_1',
                                  padding="same")
-        BN2 = tf.keras.layers.BatchNormalization()(conv2)
+        BN2 = tf.keras.layers.BatchNormalization(name='batch_normalization2_2')(conv2)
         conv2 = tf.layers.conv2d(BN2, int(128 / FLAGS.divisor), 3, 1, activation=tf.nn.relu, name='conv2_2',
                                  padding="same")
         pool2 = tf.layers.max_pooling2d(conv2, pool_size=(2, 2), strides=(2, 2), name='pool2', padding="valid")
     # conv3
     with tf.name_scope('layer_3'):
-        BN3 = tf.keras.layers.BatchNormalization()(pool2)
+        BN3 = tf.keras.layers.BatchNormalization(name='batch_normalization3_1')(pool2)
         conv3 = tf.layers.conv2d(BN3, int(256 / FLAGS.divisor), 3, 1, activation=tf.nn.relu, name='conv3_1',
                                  padding="same")
-        BN3 = tf.keras.layers.BatchNormalization()(conv3)
+        BN3 = tf.keras.layers.BatchNormalization(name='batch_normalization3_2')(conv3)
         conv3 = tf.layers.conv2d(BN3, int(256 / FLAGS.divisor), 3, 1, activation=tf.nn.relu, name='conv3_2',
                                  padding="same")
         pool3 = tf.layers.max_pooling2d(conv3, pool_size=(2, 2), strides=(2, 2), name='pool3', padding="valid")
     # conv4
     with tf.name_scope('layer_4'):
-        BN4 = tf.keras.layers.BatchNormalization()(pool3)
+        BN4 = tf.keras.layers.BatchNormalization(name='batch_normalization4_1')(pool3)
         conv4 = tf.layers.conv2d(BN4, int(512 / FLAGS.divisor), 3, 1, activation=tf.nn.relu, name='conv4_1',
                                  padding="same")
-        BN4 = tf.keras.layers.BatchNormalization()(conv4)
+        BN4 = tf.keras.layers.BatchNormalization(name='batch_normalization4_2')(conv4)
         conv4 = tf.layers.conv2d(BN4, int(512 / FLAGS.divisor), 3, 1, activation=tf.nn.relu, name='conv4_2',
                                  padding="same")
         pool4 = tf.layers.max_pooling2d(conv4, pool_size=(2, 2), strides=(2, 2), name='pool4', padding="valid")
     # conv5
     with tf.name_scope('layer_5'):
-        BN5 = tf.keras.layers.BatchNormalization()(pool4)
+        BN5 = tf.keras.layers.BatchNormalization(name='batch_normalization5_1')(pool4)
         conv5 = tf.layers.conv2d(BN5, int(1024 / FLAGS.divisor), 3, 1, activation=tf.nn.relu, name='conv5_1',
                                  padding="same")
-        BN5 = tf.keras.layers.BatchNormalization()(conv5)
+        BN5 = tf.keras.layers.BatchNormalization(name='batch_normalization5_2')(conv5)
         conv5 = tf.layers.conv2d(BN5, int(1024 / FLAGS.divisor), 3, 1, activation=tf.nn.relu, name='conv5_2',
                                  padding="same")
 
