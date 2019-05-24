@@ -1,0 +1,10 @@
+jupyter
+keras
+tensorflow
+pandas==0.24.2
+matplotlib
+hdfs
+opencv-python
+pillow
+imageio
+sklearn
