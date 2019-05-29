@@ -18,6 +18,7 @@ tf.flags.DEFINE_integer('divisor', 1, 'divisor of the number of filters, must be
 tf.flags.DEFINE_string('exec_mode', 'train', 'execution mode: train / eval')
 tf.flags.DEFINE_integer('batch_size', 128, 'batch size per GPU for training')
 tf.flags.DEFINE_integer('batch_size_eval', 100, 'batch size for evaluation')
+tf.flags.DEFINE_boolean('data_augmentation', True, 'whether to use data augmentation')
 tf.flags.DEFINE_integer('nb_classes', cal_np_unique_num(FLAGS.data_dir + "/validate_y.npy"), '# of classes')
 tf.flags.DEFINE_integer('nb_smpls_train', len(np.load(FLAGS.data_dir + "/train_x.npy")),
                         '# of samples for training')
@@ -25,6 +26,8 @@ tf.flags.DEFINE_integer('nb_smpls_val', len(np.load(FLAGS.data_dir + "/validate_
                         '# of samples for validation')
 tf.flags.DEFINE_integer('nb_smpls_eval', len(np.load(FLAGS.data_dir + "/test_x.npy")),
                         '# of samples for evaluation')
+
+INPUT_HEIGHT, INPUT_WIDTH, INPUT_CHANNEL = eval(FLAGS.input_shape)
 
 
 class BrainImgDataset(AbstractDataset):
@@ -104,16 +107,13 @@ def load_npy(image_file, label_file):
 
 
 def parse_fn(image, label, is_train):
-    # data parsing
-    # label = tf.one_hot(tf.reshape(label, [IMAGE_HEI, IMAGE_WID, IMAGE_CHN]), FLAGS.nb_classes)
-    # image = tf.cast(tf.reshape(image, [IMAGE_HEI, IMAGE_WID, IMAGE_CHN]), tf.float32)
-    # image = tf.image.per_image_standardization(image)
-
-    # data augmentation
-    # if is_train:
-    #     image = tf.image.resize_image_with_crop_or_pad(image, IMAGE_HEI + 8, IMAGE_WID + 8)
-    #     image = tf.random_crop(image, [IMAGE_HEI, IMAGE_WID, IMAGE_CHN])
-    #     image = tf.image.random_flip_left_right(image)
     image = tf.cast(image, tf.float32)
     label = tf.cast(label, tf.float32)
+
+    # data augmentation
+    if FLAGS.data_augmentation and is_train:
+        image = tf.image.resize_image_with_crop_or_pad(image, INPUT_HEIGHT + 8, INPUT_WIDTH + 8)
+        image = tf.random_crop(image, [INPUT_HEIGHT, INPUT_WIDTH, INPUT_CHANNEL])
+        image = tf.image.random_flip_left_right(image)
+
     return image, label
