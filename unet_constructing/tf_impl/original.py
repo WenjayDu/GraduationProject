@@ -11,7 +11,6 @@ FLAGS = tf.flags.FLAGS
 INPUT_IMG_HEIGHT, INPUT_IMG_WIDTH, INPUT_IMG_CHANNEL = eval(FLAGS.input_shape)
 
 
-
 class UNet:
     def __init__(self):
         self.input_image = None
@@ -61,14 +60,13 @@ class UNet:
             self.lamb = tf.placeholder(dtype=tf.float32, name='lambda')
 
             self.is_training = tf.placeholder(dtype=tf.bool, name='is_training')
-            normed_batch = batch_norm(x=self.input_image, is_training=self.is_training, name='input')
 
         # layer 1
         with tf.name_scope('layer_1'):
             # conv_1
             self.w[1] = self.init_w(shape=[3, 3, INPUT_IMG_CHANNEL, int(64 / FLAGS.divisor)], name='kernel',
                                     scope_name="conv1_1")
-            conv_1_result = tf.nn.conv2d(input=normed_batch, filter=self.w[1], strides=[1, 1, 1, 1],
+            conv_1_result = tf.nn.conv2d(input=self.input_image, filter=self.w[1], strides=[1, 1, 1, 1],
                                          padding='SAME', name='conv1_1')
             relu_1_result = tf.nn.relu(conv_1_result, name='relu_1')
             # conv_2

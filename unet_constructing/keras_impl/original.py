@@ -14,9 +14,9 @@ class UNet:
 
         IN = Input(shape=(data['image_dim'][1], data['image_dim'][2], 1))
 
-        BN1 = BatchNormalization()(IN)
+        # BN1 = BatchNormalization()(IN)
 
-        conv1 = Convolution2D(int(64 / FLAGS.divisor), 3, 3, activation='relu', border_mode='same')(BN1)
+        conv1 = Convolution2D(int(64 / FLAGS.divisor), 3, 3, activation='relu', border_mode='same')(IN)
         conv1 = Convolution2D(int(64 / FLAGS.divisor), 3, 3, activation='relu', border_mode='same')(conv1)
         pool1 = MaxPooling2D(pool_size=(2, 2), strides=None)(conv1)
 
