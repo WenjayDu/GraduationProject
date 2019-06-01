@@ -19,6 +19,7 @@ tf.flags.DEFINE_string('exec_mode', 'train', 'execution mode: train / eval')
 tf.flags.DEFINE_integer('batch_size', 128, 'batch size per GPU for training')
 tf.flags.DEFINE_integer('batch_size_eval', 100, 'batch size for evaluation')
 tf.flags.DEFINE_boolean('data_augmentation', True, 'whether to use data augmentation')
+tf.flags.DEFINE_float('lrn_rate_init', 1e-1, 'initial learning rate')
 tf.flags.DEFINE_integer('nb_classes', cal_np_unique_num(FLAGS.data_dir + "/validate_y.npy"), '# of classes')
 tf.flags.DEFINE_integer('nb_smpls_train', len(np.load(FLAGS.data_dir + "/train_x.npy")),
                         '# of samples for training')

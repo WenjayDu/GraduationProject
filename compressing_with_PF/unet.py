@@ -9,7 +9,6 @@ from utils.multi_gpu_wrapper import MultiGpuWrapper as mgw
 
 FLAGS = tf.flags.FLAGS
 tf.flags.DEFINE_float('nb_epochs_rat', 1.0, '# of training epochs\'s ratio')
-tf.flags.DEFINE_float('lrn_rate_init', 1e-1, 'initial learning rate')
 tf.flags.DEFINE_float('momentum', 0.9, 'momentum coefficient')
 tf.flags.DEFINE_float('loss_w_dcy', 2e-4, 'weight decaying loss\'s coefficient')
 tf.flags.DEFINE_float('batch_size_norm', 128, 'normalization factor of batch size')
@@ -51,9 +50,9 @@ class ModelHelper(AbstractModelHelper):
 
     def calc_loss(self, labels, outputs, trainable_vars):
         """Calculate loss (and some extra evaluation metrics)."""
-        # labels = tf.reshape(labels, [FLAGS.batch_size, INPUT_HEIGHT, INPUT_WIDTH])
         labels = tf.squeeze(labels, axis=3)
         labels = tf.cast(labels, tf.int32)
+
         loss = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=labels, logits=outputs, name="loss")
         loss_filter = lambda var: 'batch_normalization' not in var.name
         loss += FLAGS.loss_w_dcy * tf.add_n([tf.nn.l2_loss(var) for var in trainable_vars if loss_filter(var)])
@@ -63,7 +62,7 @@ class ModelHelper(AbstractModelHelper):
                                           dtype=tf.float32))
         metrics = {'accuracy': accuracy}
 
-        ## faster, but acc is lower
+        # # faster, but acc is lower
         # outputs = tf.reshape(tf.argmax(outputs, axis=3), [FLAGS.batch_size, INPUT_HEIGHT, INPUT_WIDTH, 1])
         # outputs = tf.cast(outputs, tf.float32)
         # loss = tf.losses.softmax_cross_entropy(labels, outputs)
