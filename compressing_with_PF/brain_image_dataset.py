@@ -11,7 +11,7 @@ DEFAULT_DATA_DIR = DATASET_PATH + "/mri_pad_4/data"
 FLAGS = tf.flags.FLAGS
 tf.flags.DEFINE_string('data_dir', DEFAULT_DATA_DIR, 'dir of data used to train')
 tf.flags.DEFINE_string('input_shape', "[144, 112, 1]", 'shape of input data')
-tf.flags.DEFINE_string('structure', 'original_with_BN', 'structure of the unet to use, like original/smaller')
+tf.flags.DEFINE_string('structure', 'improved', 'structure of the unet to use, like original/improved')
 tf.flags.DEFINE_string('log_dir', './logs', 'logging directory')
 tf.flags.DEFINE_integer('epoch_num', 10, 'num of epoch')
 tf.flags.DEFINE_integer('divisor', 1, 'divisor of the number of filters, must be a factor of 64')

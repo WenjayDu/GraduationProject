@@ -2,7 +2,7 @@ import tensorflow as tf
 
 from compressing_with_PF.brain_image_dataset import BrainImgDataset
 from compressing_with_PF.config import GlobalPath, cal_np_unique_num
-from compressing_with_PF.structures import (original_with_BN, original)
+from compressing_with_PF.structures import (improved, original)
 from nets.abstract_model_helper import AbstractModelHelper
 from utils.lrn_rate_utils import setup_lrn_rate_piecewise_constant
 from utils.multi_gpu_wrapper import MultiGpuWrapper as mgw
@@ -115,6 +115,6 @@ def forward_fn(inputs, data_format):
 def choose_unet(structure_name):
     switcher = {
         "original": original,
-        "original_with_BN": original_with_BN
+        "improved": improved
     }
     return switcher.get(structure_name)

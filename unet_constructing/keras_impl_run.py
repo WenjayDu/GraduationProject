@@ -11,7 +11,7 @@ sys.path.append(rootPath)
 import pickle
 from config_and_utils import GlobalVar, logging
 from module_minc_keras.minc_keras import *
-from unet_constructing.keras_impl import (original, original_with_BN)
+from unet_constructing.keras_impl import (original, improved)
 
 FLAGS = tf.flags.FLAGS
 tf.flags.DEFINE_string(name='dataset_dir_path', default=GlobalVar.DATASET_PATH + "/mri_pad_4",
@@ -34,7 +34,7 @@ MODEL_SAVE_DIR = REAL_OUTPUT_DIR + "/saved_model"
 def choose_unet(structure_name=FLAGS.structure):
     switcher = {
         "original": original.UNet(),
-        "original_with_BN": original_with_BN.UNet(),
+        "original_with_BN": improved.UNet(),
     }
     return switcher.get(structure_name)
 
