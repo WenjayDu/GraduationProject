@@ -76,7 +76,7 @@ def predict_with_keras_model(model_path, img_path, input_shape, prediction_save_
         img_array = image.img_to_array(img)
         img_array = np.expand_dims(img_array, axis=0)
         # get prediction
-        prediction = model.predict(img_array)
+        prediction = model.predict(img_array, batch_size=1)
         to_hot_cmap(img=prediction, save_path=prediction_save_dir + "/prediction.png")
 
 
@@ -90,6 +90,28 @@ def predict_with_tf_model(ckpt_path, structure, img_path, prediction_save_dir=No
     if not os.path.exists(prediction_save_dir):
         os.makedirs(prediction_save_dir)
     predict(unet, ckpt_path=ckpt_path, original_img_path=img_path, prediction_save_dir=prediction_save_dir)
+
+
+def predict_with_pb_model(pb_file_path, img_path, input_shape=[144, 112, 3]):
+    if type(input_shape) is not list:
+        sys.exit("Error: input_shape must be a list")
+    img = image.load_img(img_path, target_size=input_shape, color_mode='grayscale')
+    img = image.img_to_array(img)
+    img = img.reshape([1] + input_shape[0: 2] + [1])
+    with tf.Graph().as_default() as graph:
+        sess = tf.Session()
+
+        # restore the model
+        graph_def = tf.GraphDef()
+        with tf.gfile.GFile(pb_file_path, 'rb') as i_file:
+            graph_def.ParseFromString(i_file.read())
+        tf.import_graph_def(graph_def)
+
+        # obtain input & output nodes and then test the model
+        net_input = graph.get_tensor_by_name('import/net_input:0')
+        net_output = graph.get_tensor_by_name('import/net_output:0')
+        result = sess.run(net_output, feed_dict={net_input: img})
+        return result
 
 
 if __name__ == "__main__":
