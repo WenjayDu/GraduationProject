@@ -23,12 +23,12 @@ def get_size(path):
     if not os.path.exists(path):
         sys.exit("❌Error: Given path does not exist.")
     if os.path.isfile(path):
-        return os.path.getsize(path) / 1024 / 1024
+        return ("%.2f" % (os.path.getsize(path) / 1024 / 1024))
     elif os.path.isdir(path):
         size = 0
         for root, dirs, files in os.walk(path):
             size += sum([os.path.getsize(os.path.join(root, name)) for name in files])
-        return size / 1024 / 1024
+        return ("%.2f" % (size / 1024 / 1024))
 
 
 def create_dir(directory):
