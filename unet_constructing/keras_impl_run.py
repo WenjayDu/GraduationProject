@@ -34,7 +34,7 @@ MODEL_SAVE_DIR = REAL_OUTPUT_DIR + "/saved_model"
 def choose_unet(structure_name=FLAGS.structure):
     switcher = {
         "original": original.UNet(),
-        "original_with_BN": improved.UNet(),
+        "improved": improved.UNet(),
     }
     return switcher.get(structure_name)
 

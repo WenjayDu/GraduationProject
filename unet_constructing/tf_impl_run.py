@@ -16,7 +16,7 @@ FLAGS = tf.flags.FLAGS
 def choose_unet(structure_name=FLAGS.structure):
     switcher = {
         "original": original.UNet(),
-        "original_with_BN": improved.UNet()
+        "improved": improved.UNet()
     }
     return switcher.get(structure_name)
 
