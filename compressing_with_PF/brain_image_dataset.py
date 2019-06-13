@@ -112,9 +112,9 @@ def parse_fn(image, label, is_train):
     label = tf.cast(label, tf.float32)
 
     # data augmentation
-    if FLAGS.data_augmentation and is_train:
-        image = tf.image.resize_image_with_crop_or_pad(image, INPUT_HEIGHT + 8, INPUT_WIDTH + 8)
-        image = tf.random_crop(image, [INPUT_HEIGHT, INPUT_WIDTH, INPUT_CHANNEL])
-        image = tf.image.random_flip_left_right(image)
+    # if FLAGS.data_augmentation and is_train:
+    #     image = tf.image.resize_image_with_crop_or_pad(image, INPUT_HEIGHT + 8, INPUT_WIDTH + 8)
+    #     image = tf.random_crop(image, [INPUT_HEIGHT, INPUT_WIDTH, INPUT_CHANNEL])
+    #     image = tf.image.random_flip_left_right(image)
 
     return image, label
