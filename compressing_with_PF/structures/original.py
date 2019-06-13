@@ -10,7 +10,7 @@ def kernel_init(shape):
     return tf.truncated_normal_initializer(stddev=tf.sqrt(x=1 / (shape[0] * shape[1] * shape[2])))
 
 
-def forward_fn(inputs):
+def forward_fn(inputs, is_training):
     kernel_regu = tf.contrib.layers.l2_regularizer(LAMB)
     # conv1
     with tf.name_scope('layer_1'):

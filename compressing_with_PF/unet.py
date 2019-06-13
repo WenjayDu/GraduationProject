@@ -41,12 +41,11 @@ class ModelHelper(AbstractModelHelper):
 
     def forward_train(self, inputs):
         """Forward computation at training."""
-        return forward_fn(inputs, self.data_format)
+        return forward_fn(inputs, self.data_format, is_training=True)
 
     def forward_eval(self, inputs):
         """Forward computation at evaluation."""
-
-        return forward_fn(inputs, self.data_format)
+        return forward_fn(inputs, self.data_format, is_training=False)
 
     def calc_loss(self, labels, outputs, trainable_vars):
         """Calculate loss (and some extra evaluation metrics)."""
@@ -54,8 +53,8 @@ class ModelHelper(AbstractModelHelper):
         labels = tf.cast(labels, tf.int32)
 
         loss = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=labels, logits=outputs, name="loss")
-        loss_filter = lambda var: 'batch_normalization' not in var.name
-        loss += FLAGS.loss_w_dcy * tf.add_n([tf.nn.l2_loss(var) for var in trainable_vars if loss_filter(var)])
+        # loss_filter = lambda var: 'batch_normalization' not in var.name
+        # loss += FLAGS.loss_w_dcy * tf.add_n([tf.nn.l2_loss(var) for var in trainable_vars if loss_filter(var)])
         loss = tf.reduce_mean(loss)
         accuracy = tf.reduce_mean(tf.cast(x=tf.equal(x=tf.argmax(input=outputs, axis=3, output_type=tf.int32),
                                                      y=labels),
@@ -94,7 +93,7 @@ class ModelHelper(AbstractModelHelper):
         return 'brain_image'
 
 
-def forward_fn(inputs, data_format):
+def forward_fn(inputs, data_format, is_training):
     """Forward pass function.
 
     Args:
@@ -109,7 +108,7 @@ def forward_fn(inputs, data_format):
     if data_format == 'channel_first':
         inputs = tf.transpose(inputs, [0, 3, 1, 2])
     unet = choose_unet(FLAGS.structure)
-    return unet.forward_fn(inputs)
+    return unet.forward_fn(inputs, is_training)
 
 
 def choose_unet(structure_name):
