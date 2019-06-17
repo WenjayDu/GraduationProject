@@ -270,7 +270,10 @@ class UNet:
             result_conv_3 = tf.nn.conv2d(input=relu_2_result, filter=self.w[23], strides=[1, 1, 1, 1],
                                          padding='VALID', name='conv9_3')
 
-            self.prediction = result_conv_3
+        with tf.name_scope('softmax'):
+            result = tf.nn.softmax(logits=result_conv_3)
+
+        self.prediction = result
 
         # softmax
         with tf.name_scope('softmax_loss'):
