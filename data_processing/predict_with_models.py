@@ -92,26 +92,51 @@ def predict_with_tf_model(ckpt_path, structure, img_path, prediction_save_dir=No
     predict(unet, ckpt_path=ckpt_path, original_img_path=img_path, prediction_save_dir=prediction_save_dir)
 
 
-def predict_with_pb_model(pb_file_path, img_path, input_shape=[144, 112, 3]):
-    if type(input_shape) is not list:
-        sys.exit("Error: input_shape must be a list")
-    img = image.load_img(img_path, target_size=input_shape, color_mode='grayscale')
-    img = image.img_to_array(img)
-    img = img.reshape([1] + input_shape[0: 2] + [1])
+def predict_with_pb_model(model_path, img_path, input_shape, prediction_save_dir=None):
+    if type(input_shape) == tuple:
+        input_shape = list(input_shape)
+    if input_shape.__len__() == 2:
+        input_shape = input_shape + [3]
+    if prediction_save_dir is None:
+        prediction_save_dir = get_dir_containing_file(model_path) + "/predictions"
+    if not os.path.exists(prediction_save_dir):
+        os.makedirs(prediction_save_dir)
+    logging.info("🚩️loading the model " + model_path)
+
     with tf.Graph().as_default() as graph:
         sess = tf.Session()
 
         # restore the model
         graph_def = tf.GraphDef()
-        with tf.gfile.GFile(pb_file_path, 'rb') as i_file:
+        with tf.gfile.GFile(model_path, 'rb') as i_file:
             graph_def.ParseFromString(i_file.read())
         tf.import_graph_def(graph_def)
 
         # obtain input & output nodes and then test the model
         net_input = graph.get_tensor_by_name('import/net_input:0')
         net_output = graph.get_tensor_by_name('import/net_output:0')
-        result = sess.run(net_output, feed_dict={net_input: img})
-        return result
+
+        if os.path.isdir(img_path):
+            image_list = get_sorted_files(img_path, "png")
+            logging.info("🚩️" + str(len(image_list)) +
+                         " images to be predicted, will be saved to " + prediction_save_dir)
+            for index, image_path in enumerate(image_list):
+                original_img = image.load_img(image_path, target_size=input_shape, color_mode="grayscale")
+                original_img = image.img_to_array(original_img)
+                img = np.expand_dims(original_img, axis=0)
+                prediction = sess.run(net_output, feed_dict={net_input: img})
+                prediction = prediction.reshape(input_shape)
+                image.save_img(os.path.join(prediction_save_dir, '%d.png' % index), prediction * 255)
+            logging.info("🚩️Predictions are saved, now converting them to 'hot' color map")
+            to_hot_cmap(prediction_save_dir)
+            logging.warning('❗️Done prediction')
+        else:
+            img = image.load_img(img_path, target_size=input_shape, color_mode="grayscale")
+            img_array = image.img_to_array(img)
+            img_array = np.expand_dims(img_array, axis=0)
+            # get prediction
+            prediction = sess.run(net_output, feed_dict={net_input: img_array})
+            to_hot_cmap(img=prediction, save_path=prediction_save_dir + "/prediction.png")
 
 
 if __name__ == "__main__":
